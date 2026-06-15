@@ -1,0 +1,80 @@
+import { BlobServiceClient } from '@azure/storage-blob';
+import multer from 'multer';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+// Max file size: 5MB
+// export const upload = multer({ 
+//     storage: multer.memoryStorage(),
+//     limits: { fileSize: 5 * 1024 * 1024 } 
+// });
+
+export const upload = multer({
+    storage: multer.memoryStorage(),
+
+    limits: {
+        fileSize: 5 * 1024 * 1024
+    },
+
+    fileFilter: (req, file, cb) => {
+        const allowed = [
+            'image/jpeg',
+            'image/png',
+            'image/webp'
+        ];
+
+        if (!allowed.includes(file.mimetype)) {
+            return cb(
+                new Error(
+                    'Only JPG, PNG and WebP images are allowed'
+                )
+            );
+        }
+
+        cb(null, true);
+    }
+});
+
+const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING);
+const containerClient = blobServiceClient.getContainerClient(process.env.AZURE_CONTAINER_NAME);
+
+export const verifyAzureConnection = async () => {
+    try {
+        await blobServiceClient.getProperties();
+        console.log(`Azure Blob Storage: Verified connection. Container "${process.env.AZURE_CONTAINER_NAME}" is active.`);
+    } catch (error) {
+        console.error('Azure Blob Storage: Handshake failed! Verification aborted.');
+        console.error(`Error details: ${error.message}`);
+    }
+};
+
+export const uploadToAzure = async (file) => {
+    try {
+        const uniquePrefix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+        const blobName = `${uniquePrefix}-${file.originalname.replace(/\s+/g, '_')}`;
+        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+        
+        await blockBlobClient.uploadData(file.buffer, {
+            blobHTTPHeaders: { blobContentType: file.mimetype }
+        });
+        
+        return blockBlobClient.url;
+    } catch (error) {
+        console.error("Azure Storage Service :: uploadToAzure :: error", error);
+        throw new Error("Failed to upload image to cloud storage");
+    }
+};
+
+export const deleteFromAzure = async (fileUrl) => {
+    try {
+        if (!fileUrl) return false;
+        const parsedUrl = new URL(fileUrl);
+        const blobName = decodeURIComponent(parsedUrl.pathname.split('/').slice(2).join('/'));
+        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+        return await blockBlobClient.deleteIfExists();
+    } catch (error) {
+        console.error("Azure Storage Service :: deleteFromAzure :: error", error);
+        return false;
+    }
+};

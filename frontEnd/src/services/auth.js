@@ -1,0 +1,44 @@
+import API from '../api/client';
+
+export class AuthService {
+    async createAccount({ email, password, name }) {
+        try {
+            const response = await API.post('/auth/register', { email, password, name });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data?.message || "Registration failed";
+        }
+    }
+
+    async login({ email, password }) {
+        try {
+            const response = await API.post('/auth/login', { email, password });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data?.message || "Login failed";
+        }
+    }
+
+    async getCurrentUser() {
+        try {
+            const response = await API.get('/auth/me');
+            return response.data;
+        } catch (error) {
+            console.error("Auth Service :: getCurrentUser :: error", error);
+            return null;
+        }
+    }
+
+    async logout() {
+        try {
+            await API.post('/auth/logout');
+            return true;
+        } catch (error) {
+            console.error("Auth Service :: logout :: error", error);
+            return false;
+        }
+    }
+}
+
+const authService = new AuthService();
+export default authService;
