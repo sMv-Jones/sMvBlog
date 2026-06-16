@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import {Container, Logo, LogoutBtn} from '../../index'
 
 function Header() {
-  console.log("Here header", useSelector((state)=>state.auth))
   const authStatus = useSelector((state) => state.auth.status);
   const navigate = useNavigate()
 

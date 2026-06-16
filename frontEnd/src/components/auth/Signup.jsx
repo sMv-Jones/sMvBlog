@@ -2,34 +2,37 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { useForm } from 'react-hook-form'
-// Custom import
 import authService from '../../services/auth'
 import { login } from '../../store/authSlice'
 import { Button, Input, Logo } from '../index'
 
 function Signup() {
     const navigate = useNavigate()
-    const [error, setError] = useState("")
     const dispatch = useDispatch()
     const { register, handleSubmit } = useForm()
+    const [error, setError] = useState("")
 
-    const create = async (data) => {
+    const createAccount = async (data) => {
         setError("")
         try {
-            const userData = await authService.createAccount(data)
-            if (userData) {
-                const userData = await authService.getCurrentUser()
-                if (userData) dispatch(login(userData));
+            // OPTIMIZATION: Await registration response which logs the user in automatically
+            const response = await authService.createAccount(data)
+            
+            if (response?.success) {
+                // Extract clean user object from response payload and dispatch
+                dispatch(login(response.user));
                 navigate("/")
+            } else {
+                setError("Account creation failed.")
             }
-        } catch (error) {
-            setError(error.message)
+        } catch (err) {
+            setError(err?.response?.data?.message || err.message || "An error occurred during signup")
         }
     }
 
     return (
-        <div className="flex items-center justify-center">
-            <div className={`mx-auto w-full max-w-lg bg-gray-100 rounded-xl p-10 border border-black/10`}>
+        <div className="flex items-center justify-center w-full">
+            <div className="mx-auto w-full max-w-lg bg-gray-100 rounded-xl p-10 border border-black/10">
                 <div className="mb-2 flex justify-center">
                     <Logo width="100px" />
                 </div>
@@ -43,9 +46,10 @@ function Signup() {
                         Sign In
                     </Link>
                 </p>
+                
                 {error && <p className="text-red-600 mt-8 text-center">{error}</p>}
 
-                <form onSubmit={handleSubmit(create)}>
+                <form onSubmit={handleSubmit(createAccount)} className="mt-8">
                     <div className='space-y-5'>
                         <Input
                             label="Full Name: "
@@ -80,7 +84,6 @@ function Signup() {
                     </div>
                 </form>
             </div>
-
         </div>
     )
 }

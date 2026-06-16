@@ -1,14 +1,15 @@
 import User from '../models/user.js';
 import jwt from 'jsonwebtoken';
 
+// Helper to generate JWT and issue an HTTP-only Cookie
 const generateTokenAndSetCookie = (res, userId) => {
     const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
     res.cookie('token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', 
-        sameSite: 'none',
-        maxAge: 30 * 24 * 60 * 60 * 1000 
+        secure: true,
+        sameSite: 'None',
+        maxAge: 30 * 24 * 60 * 60 * 1000
     });
 };
 
@@ -25,6 +26,8 @@ export const registerUser = async (req, res, next) => {
         const user = await User.create({ name, email, password });
 
         generateTokenAndSetCookie(res, user._id);
+
+        // Explicit payload normalization
         res.status(201).json({
             success: true,
             user: { _id: user._id, name: user.name, email: user.email }
@@ -39,6 +42,7 @@ export const loginUser = async (req, res, next) => {
         const user = await User.findOne({ email }).select('+password');
         if (user && (await user.matchPassword(password))) {
             generateTokenAndSetCookie(res, user._id);
+            // Explicit payload normalization
             res.json({
                 success: true,
                 user: { _id: user._id, name: user.name, email: user.email }
@@ -54,18 +58,34 @@ export const logoutUser = async (req, res) => {
     res.clearCookie("token", {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: "strict"
+        sameSite: "none" // Set to "none" if cross-site, matching your setter config
     });
     res.json({ success: true, message: "Logged out successfully" });
 };
 
 export const getCurrentUser = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.id);
-        if (!user) {
-            res.status(401);
-            throw new Error('User not logged in');
+        // 1. Ensure auth middleware successfully attached user credentials
+        if (!req.user || !req.user.id) {
+            return res.status(200).json({ success: false, user: null });
         }
-        res.json(user);
-    } catch (error) { next(error); }
+
+        // 2. Fetch data, dropping password fields and Mongoose version __v
+        const user = await User.findById(req.user.id).select("-password -__v");
+
+        // 3. Handle token existence but document deletion in DB
+        if (!user) {
+            return res.status(200).json({ success: false, user: null });
+        }
+
+        // IMPROVEMENT: Transform Mongoose document to clean JSON, keeping both id and _id 
+        // to prevent field mismatches in components like PostForm
+        const userPayload = user.toObject({ virtuals: true });
+
+        // 4. Return structural wrapper identical to login/register payload
+        return res.status(200).json({ success: true, user: userPayload });
+
+    } catch (error) {
+        next(error);
+    }
 };

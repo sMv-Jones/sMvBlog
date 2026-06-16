@@ -9,6 +9,7 @@ import './index.css'
 import { AuthLayout } from './components/index.js'
 import {Login, AddPost, Signup, EditPost, Post, AllPost, Home, NotFound} from './pages/index'
 
+
 const router = createBrowserRouter([
   {
     path: "/",

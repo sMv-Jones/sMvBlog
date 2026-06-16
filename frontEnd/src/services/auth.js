@@ -24,7 +24,7 @@ export class AuthService {
             const response = await API.get('/auth/me');
             return response.data;
         } catch (error) {
-            console.error("Auth Service :: getCurrentUser :: error", error);
+            console.error("Auth Service -> getCurrentUser -> error ->", error?.response?.status);
             return null;
         }
     }

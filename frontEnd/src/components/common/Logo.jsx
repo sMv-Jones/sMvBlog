@@ -1,7 +1,7 @@
 function Logo({ width }) {
   return (
     <img
-      src="https://images.pexels.com/photos/37438065/pexels-photo-37438065.jpeg"
+      src="favicon.png"
       alt="Logo"
       style={{
         width: width || "150px",

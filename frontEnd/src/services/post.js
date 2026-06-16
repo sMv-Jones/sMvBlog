@@ -57,7 +57,15 @@ export class PostService {
             return null;
         }
     }
-
+    async getUserPost(){
+        try {
+            const response = await API.get(`/posts/my-posts`);
+            return response.data;
+        } catch (error) {
+            console.error("Post Service :: getPost :: error", error);
+            return null;
+        }
+    }
     async getPosts(status = 'active') {
         try {
             const response = await API.get(`/posts?status=${status}`);

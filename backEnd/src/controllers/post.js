@@ -34,7 +34,11 @@ export const createPost = async (req, res, next) => {
             userId: req.user.id
         });
 
-        res.status(201).json(post);
+        // Cleaned Response: Convert document to plain object and remove internal __v field
+        const postResponse = post.toObject();
+        delete postResponse.__v;
+
+        res.status(201).json(postResponse);
     } catch (error) { next(error); }
 };
 
@@ -66,11 +70,8 @@ export const updatePost = async (req, res, next) => {
             await deleteFromAzure(post.featuredImage);
             updateData.featuredImage = await uploadToAzure(req.file);
         }
-        // const updatedPost = await Post.findByIdAndUpdate(
-        // post._id,
-        // { $set: updateData },
-        //  { new: true, runValidators: true }
-        // );
+
+        // Cleaned Response: Stripped out database version flag using `.select('-__v')`
         const updatedPost = await Post.findByIdAndUpdate(
             post._id,
             { $set: updateData },
@@ -78,7 +79,7 @@ export const updatePost = async (req, res, next) => {
                 returnDocument: 'after',
                 runValidators: true
             }
-        );
+        ).select('-__v');
 
         res.json(updatedPost);
     } catch (error) { next(error); }
@@ -105,7 +106,8 @@ export const deletePost = async (req, res, next) => {
 
 export const getPost = async (req, res, next) => {
     try {
-        const post = await Post.findOne({ slug: req.params.slug });
+        // Cleaned Response: Project out __v from structural layout
+        const post = await Post.findOne({ slug: req.params.slug }).select('-__v');
         if (!post) return res.status(404).json({ message: "Post not found" });
         res.json(post);
     } catch (error) { next(error); }
@@ -113,14 +115,20 @@ export const getPost = async (req, res, next) => {
 
 export const getPosts = async (req, res, next) => {
     try {
-        const posts = await Post.find({ status: "active" }).sort({ createdAt: -1 });
+        // Cleaned Response: Project out __v from arrays
+        const posts = await Post.find({ status: "active" })
+            .select('-__v')
+            .sort({ createdAt: -1 });
         res.json(posts);
     } catch (error) { next(error); }
 };
 
 export const getMyPosts = async (req, res, next) => {
     try {
-        const posts = await Post.find({ userId: req.user.id }).sort({ createdAt: -1 });
+        // Cleaned Response: Project out __v from arrays
+        const posts = await Post.find({ userId: req.user.id })
+            .select('-__v')
+            .sort({ createdAt: -1 });
         res.json({ success: true, count: posts.length, posts });
     } catch (error) { next(error); }
 };

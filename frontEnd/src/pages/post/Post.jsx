@@ -1,6 +1,6 @@
-import  { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import postServices from "../../services/post";
+import postService from "../../services/post"; // Updated to matching singular import instance
 import { Button, Container } from "../../components/index";
 import parse from "html-react-parser";
 import { useSelector } from "react-redux";
@@ -12,21 +12,42 @@ export default function Post() {
 
     const userData = useSelector((state) => state.auth.userData);
 
-    const isAuthor = post && userData ? post.userId === userData.$id : false;
+    // FIX 1: Robust Author Check. Handles situations where userId is an object or string,
+    // and checks both traditional mongo '_id' and virtualized 'id' fields.
+    const getAuthorId = (postObj) => {
+        if (!postObj?.userId) return null;
+        return typeof postObj.userId === "object" ? postObj.userId._id || postObj.userId.id : postObj.userId;
+    };
+
+    const currentUserId = userData?._id || userData?.id;
+    const postAuthorId = getAuthorId(post);
+    
+    const isAuthor = postAuthorId && currentUserId ? String(postAuthorId) === String(currentUserId) : false;
 
     useEffect(() => {
         if (slug) {
-            postServices.getPost(slug).then((post) => {
-                if (post) setPost(post);
-                else navigate("/");
-            });
-        } else navigate("/");
+            postService.getPost(slug).then((response) => {
+                // Adjusting dynamically if your Express API returns the post wrapped in a data object
+                const postData = response?.data || response; 
+                if (postData) {
+                    setPost(postData);
+                } else {
+                    navigate("/");
+                }
+            }).catch(() => navigate("/"));
+        } else {
+            navigate("/");
+        }
     }, [slug, navigate]);
 
-    const deletePost = () => {
-        postServices.deletePost(post.$id).then((status) => {
-            if (status) {
-                postServices.deleteFile(post.featuredImage);
+    const handleDeletePost = () => {
+        // FIX  2: Using post.slug instead of post._id because your Express service uses slugs for queries
+        const identifier = post.slug || post._id;
+        
+        postService.deletePost(identifier).then((success) => {
+            if (success) {
+                // Note: postService.deleteFile(post.featuredImage) was removed here
+                // because your Express backend handles image deletion inside deletePost automatically!
                 navigate("/");
             }
         });
@@ -37,19 +58,26 @@ export default function Post() {
             <Container>
                 <div className="w-full flex justify-center mb-4 relative border rounded-xl p-2">
                     <img
-                        src={postServices.getFilePreview(post.featuredImage)}
+                        style={{
+                            flexShrink: 0,
+                            width: "15vw",
+                            height: "auto",
+                            objectFit: "cover"
+                        }}
+                        src={post.featuredImage}
                         alt={post.title}
                         className="rounded-xl"
                     />
 
                     {isAuthor && (
                         <div className="absolute right-6 top-6">
-                            <Link to={`/edit-post/${post.$id}`}>
+                            {/* FIX 3: Routing to edit page via slug instead of database _id */}
+                            <Link to={`/edit-post/${post.slug || post._id}`}>
                                 <Button bgColor="bg-green-500" className="mr-3">
                                     Edit
                                 </Button>
                             </Link>
-                            <Button bgColor="bg-red-500" onClick={deletePost}>
+                            <Button bgColor="bg-red-500" onClick={handleDeletePost}>
                                 Delete
                             </Button>
                         </div>
@@ -60,7 +88,7 @@ export default function Post() {
                 </div>
                 <div className="browser-css">
                     {parse(post.content)}
-                    </div>
+                </div>
             </Container>
         </div>
     ) : null;

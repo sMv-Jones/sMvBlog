@@ -332,7 +332,7 @@ multipart/form-data
 ## Update Post
 
 ```http
-PUT /api/posts/:slug
+PUT /api/posts/:featuredImage
 ```
 
 ### Authentication Required

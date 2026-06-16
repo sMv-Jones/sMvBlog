@@ -6,7 +6,7 @@ body {
     /* full-viewport gradient that won't be clipped by content */
     min-height: 100vh;
     margin: 0;
-    background-image: url('https://images.pexels.com/photos/450066/pexels-photo-450066.jpeg');
+    background: linear-gradient(to right, #14b8a6, #06b6d4);
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-size: cover;

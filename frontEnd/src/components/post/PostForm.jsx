@@ -1,25 +1,22 @@
 import { useCallback, useEffect } from "react";
-import { useForm, useWatch } from "react-hook-form"; // Imported useWatch
+import { useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { Button, Input, TextEditor, Select } from "../../components/index";
-import postServices from "../../services/post";
+import postService from "../../services/post"; // Using the new Express postService instance
 
 export default function PostForm({ post }) {
     const { register, handleSubmit, setValue, control, getValues } = useForm({
         defaultValues: {
             title: post?.title ?? "",
-            slug: post?.$id ?? "",
+            slug: post?.slug ?? "", // Changed from post?._id to post?.slug to match your Express routing
             content: post?.content ?? "",
             status: post?.status ?? "active",
         },
     });
 
     const navigate = useNavigate();
-    const userData = useSelector((state) => state.auth.userData);
 
-    // Modern way: Watch ONLY the title field. 
-    // This returns a plain string, which the React Compiler loves.
+    // Watch ONLY the title field to automatically generate slug values
     const titleValue = useWatch({
         control,
         name: "title",
@@ -27,30 +24,29 @@ export default function PostForm({ post }) {
 
     const submit = async (data) => {
         try {
-            let fileId = post?.featuredImage;
-
-            if (data.image?.[0]) {
-                const file = await postServices.uploadFile(data.image[0]);
-                if (file) {
-                    fileId = file.$id;
-                    if (post?.featuredImage) {
-                        await postServices.deleteFile(post.featuredImage);
-                    }
-                }
-            }
-
             const payload = {
-                ...data,
-                featuredImage: fileId,
-                userId: userData?.$id,
+                title: data.title,
+                slug: data.slug,
+                content: data.content,
+                status: data.status,
+                imageFile: data.image?.[0] || null, // Extract the actual File object
             };
 
-            const dbPost = post 
-                ? await postServices.updatePost(post.$id, payload)
-                : await postServices.createPost(payload);
+            let dbPost;
+
+            if (post) {
+                // If editing, use updatePost service method requiring slug as primary identifier
+                dbPost = await postService.updatePost(post.slug, payload);
+            } else {
+                // If creating, pass full payload object directly 
+                dbPost = await postService.createPost(payload);
+            }
 
             if (dbPost) {
-                navigate(`/post/${dbPost.$id}`);
+                // Redirecting to post detail page using new slug matching schema format
+                // Note: Fallback checks handle variations if your Express server answers with a slug or an _id tracking key
+                const targetSlug = dbPost.slug || dbPost.data?.slug || post?.slug;
+                navigate(`/post/${targetSlug}`);
             }
         } catch (error) {
             console.error("Failed to submit post:", error);
@@ -68,7 +64,7 @@ export default function PostForm({ post }) {
         return "";
     }, []);
 
-    // Clean, compiler-safe effect running only when the string 'titleValue' changes
+    // Hook monitoring titles changes to keep target text updates uniform
     useEffect(() => {
         if (titleValue) {
             setValue("slug", slugTransform(titleValue), { shouldValidate: true });
@@ -101,12 +97,12 @@ export default function PostForm({ post }) {
                     type="file"
                     className="mb-4"
                     accept="image/png, image/jpg, image/jpeg, image/gif"
-                    {...register("image", { required: !post })}
+                    {...register("image", { required: !post })} // Image required only for new posts
                 />
                 {post?.featuredImage && (
                     <div className="w-full mb-4">
                         <img
-                            src={postServices.getFilePreview(post.featuredImage)}
+                            src={post.featuredImage} // The direct cloud URL from your Express DB
                             alt={post.title}
                             className="rounded-lg"
                         />
@@ -125,125 +121,3 @@ export default function PostForm({ post }) {
         </form>
     );
 }
-// import React, { useCallback } from "react";
-// import { useForm } from "react-hook-form";
-// import { useNavigate } from "react-router-dom";
-// import { useSelector } from "react-redux";
-// import { Button, Input, TextEditor, Select } from "../../components/index";
-// import postServices from "../../services/post";
-
-// export default function PostForm({ post }) {
-//     const { register, handleSubmit, watch, setValue, control, getValues } = useForm({
-//         defaultValues: {
-//             title: post?.title || "",
-//             slug: post?.$id || "",
-//             content: post?.content || "",
-//             status: post?.status || "active",
-//         },
-//     });
-
-//     const navigate = useNavigate();
-//     const userData = useSelector((state) => state.auth.userData);
-
-//     const submit = async (data) => {
-//         if (post) {
-//             const file = data.image[0] ? await postServices.uploadFile(data.image[0]) : null;
-
-//             if (file) {
-//                 postServices.deleteFile(post.featuredImage);
-//             }
-
-//             const dbPost = await postServices.updatePost(post.$id, {
-//                 ...data,
-//                 featuredImage: file ? file.$id : undefined,
-//             });
-
-//             if (dbPost) {
-//                 navigate(`/post/${dbPost.$id}`);
-//             }
-//         } else {
-//             const file = await postServices.uploadFile(data.image[0]);
-
-//             if (file) {
-//                 const fileId = file.$id;
-//                 data.featuredImage = fileId;
-//                 const dbPost = await postServices.createPost({ ...data, userId: userData.$id });
-
-//                 if (dbPost) {
-//                     navigate(`/post/${dbPost.$id}`);
-//                 }
-//             }
-//         }
-//     };
-
-//     const slugTransform = useCallback((value) => {
-//         if (value && typeof value === "string")
-//             return value
-//                 .trim()
-//                 .toLowerCase()
-//                 .replace(/[^a-zA-Z\d\s]+/g, "-")
-//                 .replace(/\s/g, "-");
-
-//         return "";
-//     }, []);
-
-//     React.useEffect(() => {
-//         const subscription = watch((value, { name }) => {
-//             if (name === "title") {
-//                 setValue("slug", slugTransform(value.title), { shouldValidate: true });
-//             }
-//         });
-
-//         return () => subscription.unsubscribe();
-//     }, [watch, slugTransform, setValue]);
-
-//     return (
-//         <form onSubmit={handleSubmit(submit)} className="flex flex-wrap">
-//             <div className="w-2/3 px-2">
-//                 <Input
-//                     label="Title :"
-//                     placeholder="Title"
-//                     className="mb-4"
-//                     {...register("title", { required: true })}
-//                 />
-//                 <Input
-//                     label="Slug :"
-//                     placeholder="Slug"
-//                     className="mb-4"
-//                     {...register("slug", { required: true })}
-//                     onInput={(e) => {
-//                         setValue("slug", slugTransform(e.currentTarget.value), { shouldValidate: true });
-//                     }}
-//                 />
-//                 <TextEditor label="Content :" name="content" control={control} defaultValue={getValues("content")} />
-//             </div>
-//             <div className="w-1/3 px-2">
-//                 <Input
-//                     label="Featured Image :"
-//                     type="file"
-//                     className="mb-4"
-//                     accept="image/png, image/jpg, image/jpeg, image/gif"
-//                     {...register("image", { required: !post })}
-//                 />
-//                 {post && (
-//                     <div className="w-full mb-4">
-//                         <img
-//                             src={postServices.getFilePreview(post.featuredImage)}
-//                             alt={post.title}
-//                             className="rounded-lg"
-//                         />
-//                     </div>
-//                 )}
-//                 <Select
-//                     options={["active", "inactive"]}
-//                     label="Status"
-//                     className="mb-4"
-//                     {...register("status", { required: true })}
-//                 />
-//                 <Button type="submit" bgColor={post ? "bg-green-500" : undefined} className="w-full">
-//                     {post ? "Update" : "Submit"}
-//                 </Button>
-//             </div>
-//         </form>
-//     );
-// }
