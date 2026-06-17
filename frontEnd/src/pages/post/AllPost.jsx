@@ -5,7 +5,7 @@ import postServices from "../../services/post";
 function AllPosts() {
     const [posts, setPosts] = useState([])
     useEffect(() => {
-        postServices.getPosts([]).then((posts) => {
+        postServices.getUserPost().then((posts) => {
         if (posts) {
             setPosts(posts)
         }

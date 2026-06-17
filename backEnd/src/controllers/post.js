@@ -129,6 +129,6 @@ export const getMyPosts = async (req, res, next) => {
         const posts = await Post.find({ userId: req.user.id })
             .select('-__v')
             .sort({ createdAt: -1 });
-        res.json({ success: true, count: posts.length, posts });
+        res.json(posts);
     } catch (error) { next(error); }
-};
+};  

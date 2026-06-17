@@ -14,7 +14,7 @@ function App() {
     const checkUser = async () => {
       try {
         const userData = await authService.getCurrentUser();
-        
+        console.log(userData);
         if (userData?.success && userData?.user) {
           dispatch(login(userData.user));
         } else {

@@ -10,8 +10,7 @@ export default function Post() {
     const { slug } = useParams();
     const navigate = useNavigate();
 
-    const userData = useSelector((state) => state.auth.userData);
-
+    const userData = useSelector((state) => state.auth);
     // FIX 1: Robust Author Check. Handles situations where userId is an object or string,
     // and checks both traditional mongo '_id' and virtualized 'id' fields.
     const getAuthorId = (postObj) => {
@@ -19,7 +18,7 @@ export default function Post() {
         return typeof postObj.userId === "object" ? postObj.userId._id || postObj.userId.id : postObj.userId;
     };
 
-    const currentUserId = userData?._id || userData?.id;
+    const currentUserId = userData?.user;
     const postAuthorId = getAuthorId(post);
     
     const isAuthor = postAuthorId && currentUserId ? String(postAuthorId) === String(currentUserId) : false;
