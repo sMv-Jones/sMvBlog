@@ -1,7 +1,7 @@
 function Logo({ width }) {
   return (
     <img
-      src="logo.jpg"
+      src="logo.png"
       alt="Logo"
       style={{
         width: width || "150px",
@@ -11,7 +11,6 @@ function Logo({ width }) {
         objectFit: "cover",
         display: "block",
         borderRadius: "50%",
-        border: "2px solid #ccc2",
       }}
     />
   );

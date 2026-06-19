@@ -57,7 +57,7 @@ export const loginUser = async (req, res, next) => {
 export const logoutUser = async (req, res) => {
     res.clearCookie("token", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true || process.env.NODE_ENV === 'production',
         sameSite: "none" // Set to "none" if cross-site, matching your setter config
     });
     res.json({ success: true, message: "Logged out successfully" });

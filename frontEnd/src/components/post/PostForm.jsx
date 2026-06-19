@@ -72,52 +72,71 @@ export default function PostForm({ post }) {
     }, [titleValue, slugTransform, setValue]);
 
     return (
-        <form onSubmit={handleSubmit(submit)} className="flex flex-wrap">
-            <div className="w-2/3 px-2">
-                <Input
-                    label="Title :"
-                    placeholder="Title"
-                    className="mb-4"
-                    {...register("title", { required: true })}
-                />
-                <Input
-                    label="Slug :"
-                    placeholder="Slug"
-                    className="mb-4"
-                    {...register("slug", { required: true })}
-                    onInput={(e) => {
-                        setValue("slug", slugTransform(e.currentTarget.value), { shouldValidate: true });
-                    }}
-                />
-                <TextEditor label="Content :" name="content" control={control} defaultValue={getValues("content")} />
-            </div>
-            <div className="w-1/3 px-2">
-                <Input
-                    label="Featured Image :"
-                    type="file"
-                    className="mb-4"
-                    accept="image/png, image/jpg, image/jpeg, image/gif"
-                    {...register("image", { required: !post })} // Image required only for new posts
-                />
-                {post?.featuredImage && (
-                    <div className="w-full mb-4">
-                        <img
-                            src={post.featuredImage} // The direct cloud URL from your Express DB
-                            alt={post.title}
-                            className="rounded-lg"
+        <div className="w-full max-w-6xl mx-auto my-6 px-4 text-white">
+            <form 
+                onSubmit={handleSubmit(submit)} 
+                className="grid grid-cols-1 lg:grid-cols-3 gap-8 rounded-3xl border border-white/10 bg-black/60 backdrop-blur-2xl shadow-2xl p-6 md:p-10"
+            >
+                {/* Left Side Elements */}
+                <div className="lg:col-span-2 space-y-6">
+                    <Input
+                        label="Title :"
+                        placeholder="Title"
+                        className="w-full bg-black/30 border border-white/10 rounded-xl focus:border-blue-500   transition focus:ring-1 focus:ring-blue-500"
+                        {...register("title", { required: true })}
+                    />
+                    <Input
+                        label="Slug :"
+                        placeholder="Slug"
+                        className="w-full bg-black/50 border border-white/10 rounded-xl focus:border-blue-500 transition focus:ring-1 focus:ring-blue-500 font-mono font-bold text-sm text-blue-900/100"
+                        {...register("slug", { required: true })}
+                        onInput={(e) => {
+                            setValue("slug", slugTransform(e.currentTarget.value), { shouldValidate: true });
+                        }}
+                    />
+                    <div className="rounded-2xl overflow-hidden border border-white/10 bg-black/20 p-1">
+                        <TextEditor label="Content :" name="content" control={control} defaultValue={getValues("content")} />
+                    </div>
+                </div>
+
+                {/* Right Side Elements */}
+                <div className="space-y-6 lg:border-l lg:border-white/10 lg:pl-8 flex flex-col justify-between">
+                    <div className="space-y-6">
+                        <Input
+                            label="Featured Image :"
+                            type="file"
+                            className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30 file:cursor-pointer"
+                            accept="image/png, image/jpg, image/jpeg, image/gif"
+                            {...register("image", { required: !post })} // Image required only for new posts
+                        />
+                        {post?.featuredImage && (
+                            <div className="w-full rounded-2xl overflow-hidden border border-white/10 bg-black/40 shadow-md">
+                                <img
+                                    src={post.featuredImage} // The direct cloud URL from your Express DB
+                                    alt={post.title}
+                                    className="w-full aspect-video object-cover"
+                                />
+                            </div>
+                        )}
+                        <Select
+                            options={["active", "inactive"]}
+                            label="Status"
+                            className="w-full bg-black/30 border border-white/10 rounded-xl focus:border-blue-500 transition"
+                            {...register("status", { required: true })}
                         />
                     </div>
-                )}
-                <Select
-                    options={["active", "inactive"]}
-                    label="Status"
-                    className="mb-4"
-                    {...register("status", { required: true })}
-                />
-                <Button type="submit" bgColor={post ? "bg-green-500" : undefined} className="w-full">
-                    {post ? "Update" : "Submit"}
-                </Button>
-            </div>
-        </form>
+
+                    <div className="pt-6 border-t border-white/10 lg:border-0 lg:pt-0">
+                        <Button 
+                            type="submit" 
+                            bgColor={post ? "bg-green-500" : undefined} 
+                            className="w-full py-3 rounded-xl font-semibold tracking-wide shadow-lg hover:scale-105 transition duration-200 cursor-pointer"
+                        >
+                            {post ? "Update" : "Submit"}
+                        </Button>
+                    </div>
+                </div>
+            </form>
+        </div>
     );
 }
