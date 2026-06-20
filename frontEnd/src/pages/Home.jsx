@@ -8,7 +8,7 @@ function Home() {
     const [posts, setPosts] = useState([])
     const AuthStatus = useSelector(state => state.auth.status)
     const userData = useSelector(state => state.auth)
-
+    console.log(userData);
     // ✅ LINTER FIX: Set initial state dynamically. 
     // If the user is logged in, start with loading true. If logged out, start with loading false.
     const [loading, setLoading] = useState(() => !!AuthStatus)
@@ -80,7 +80,7 @@ function Home() {
                 <Container>
                     <div className="max-w-xl mx-auto rounded-3xl border border-white/10 bg-black/60 backdrop-blur-2xl shadow-2xl p-8 md:p-12 text-center flex flex-col items-center">
                         <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white">
-                            Welcome back, <span className="text-blue-400">{userData?.userName || "Developer"}</span>! <br /> <br />
+                            Welcome back, <span className="text-blue-400">{userData?.userDisplayName || "Developer"}</span>! <br /> <br />
                         </h1>
                         <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-blue-400 mb-6 shadow-inner">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -114,7 +114,7 @@ function Home() {
                 <div className="max-w-7xl mx-auto mb-10 p-6 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl flex justify-between items-center flex-wrap gap-4 shadow-xl">
                     <div className="space-y-1">
                         <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white">
-                            Welcome back, <span className="text-blue-400">{userData?.userName || "Developer"}</span>!
+                            Welcome back, <span className="text-blue-400">{userData?.userDisplayName || "Developer"}</span>!
                         </h1>
                         <p className="text-xs md:text-sm text-white/50">
                             Here is your curated tech feed on sMv|Blog.

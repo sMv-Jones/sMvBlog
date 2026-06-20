@@ -1,9 +1,10 @@
 import User from '../models/user.js';
 import jwt from 'jsonwebtoken';
+import generateUsername from '../utils/uuid.js';
 
 // Helper to generate JWT and issue an HTTP-only Cookie
-const generateTokenAndSetCookie = (res, userId) => {
-    const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '30d' });
+const generateTokenAndSetCookie = (res, userId, userName, displayName) => {
+    const token = jwt.sign({ userId, userName, displayName }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
     res.cookie('token', token, {
         httpOnly: true,
@@ -16,21 +17,20 @@ const generateTokenAndSetCookie = (res, userId) => {
 export const registerUser = async (req, res, next) => {
     try {
         const { email, password, name } = req.body;
-
         const userExists = await User.findOne({ email });
         if (userExists) {
             res.status(400);
             throw new Error('User already exists');
         }
+        const userName = generateUsername(name);
+        const user = await User.create({ displayName: name, userName: userName, email, password });
 
-        const user = await User.create({ name, email, password });
-
-        generateTokenAndSetCookie(res, user._id);
+        generateTokenAndSetCookie(res, user._id, user.userName, user.displayName );
 
         // Explicit payload normalization
         res.status(201).json({
             success: true,
-            user: { _id: user._id, name: user.name, email: user.email }
+            user: { _id: user._id, diplayName: user.displayName, uesrName: userName, email: user.email }
         });
     } catch (error) { next(error); }
 };
@@ -41,11 +41,11 @@ export const loginUser = async (req, res, next) => {
 
         const user = await User.findOne({ email }).select('+password');
         if (user && (await user.matchPassword(password))) {
-            generateTokenAndSetCookie(res, user._id);
+            generateTokenAndSetCookie(res, user._id, user.userName, user.displayName);
             // Explicit payload normalization
             res.json({
                 success: true,
-                user: { _id: user._id, name: user.name, email: user.email }
+                user: { _id: user._id, displayName: user.displayName, userName: user.userName, email: user.email }
             });
         } else {
             res.status(401);

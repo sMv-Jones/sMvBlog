@@ -4,6 +4,7 @@ export const registerValidation = [
     body("name")
         .trim()
         .notEmpty().withMessage("Name is required")
+        .isAlpha("en-US", { ignore: " " }).withMessage("Name must only contain letters and spaces")
         .isLength({ min: 2, max: 50 }).withMessage("Name must be between 2 and 50 characters"),
     body("email")
         .trim()

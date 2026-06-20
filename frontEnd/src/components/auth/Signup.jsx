@@ -9,17 +9,15 @@ import { Button, Input, Logo } from '../index'
 function Signup() {
     const navigate = useNavigate()
     const dispatch = useDispatch()
-    const { register, handleSubmit } = useForm()
+    const { register, handleSubmit, formState: { errors } } = useForm()
     const [error, setError] = useState("")
 
     const createAccount = async (data) => {
         setError("")
         try {
-            // OPTIMIZATION: Await registration response which logs the user in automatically
             const response = await authService.createAccount(data)
             
             if (response?.success) {
-                // Extract clean user object from response payload and dispatch
                 dispatch(login(response.user));
                 navigate("/")
             } else {
@@ -51,33 +49,53 @@ function Signup() {
 
                 <form onSubmit={handleSubmit(createAccount)} className="mt-8">
                     <div className='space-y-5'>
-                        <Input
-                            label="Full Name: "
-                            placeholder="Enter your full name"
-                            {...register("name", {
-                                required: true,
-                            })}
-                        />
-                        <Input
-                            label="Email: "
-                            placeholder="Enter your email"
-                            type="email"
-                            {...register("email", {
-                                required: true,
-                                validate: {
-                                    matchPatern: (value) => /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(value) ||
-                                        "Email address must be a valid address",
-                                }
-                            })}
-                        />
-                        <Input
-                            label="Password: "
-                            type="password"
-                            placeholder="Enter your password"
-                            {...register("password", {
-                                required: true,
-                            })}
-                        />
+                        <div>
+                            <Input
+                                label="Full Name: "
+                                placeholder="Enter your full name"
+                                {...register("name", {
+                                    required: "Name is required",
+                                    pattern: {
+                                        value: /^[A-Za-z\s]+$/,
+                                        message: "Name must only contain letters and spaces"
+                                    }
+                                })}
+                            />
+                            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+                        </div>
+
+                        <div>
+                            <Input
+                                label="Email: "
+                                placeholder="Enter your email"
+                                type="email"
+                                {...register("email", {
+                                    required: "Email is required",
+                                    validate: {
+                                        matchPatern: (value) => /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(value) ||
+                                            "Email address must be a valid address",
+                                    }
+                                })}
+                            />
+                            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+                        </div>
+
+                        <div>
+                            <Input
+                                label="Password: "
+                                type="password"
+                                placeholder="Enter your password"
+                                {...register("password", {
+                                    required: "Password is required",
+                                    minLength: {
+                                        value: 8,
+                                        message: "Password must be at least 8 characters"
+                                    }
+                                })}
+                            />
+                            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+                        </div>
+
                         <Button type="submit" className="w-full">
                             Create Account
                         </Button>

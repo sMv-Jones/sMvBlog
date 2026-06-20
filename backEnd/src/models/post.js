@@ -29,6 +29,14 @@ const postSchema = new mongoose.Schema({
         enum: ['active', 'inactive'],
         default: 'active'
     },
+    displayName: {
+        type: String,
+        required: true
+    },
+    userName: {
+        type: String,
+        required: true
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

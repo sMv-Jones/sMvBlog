@@ -24,14 +24,15 @@ export const createPost = async (req, res, next) => {
         const uniqueSlug = `${nanoid()}-${cleanSlug}`.substring(0, 45);
 
         const imageUrl = await uploadToAzure(req.file);
-
         const post = await Post.create({
             title,
             slug: uniqueSlug,
             content,
             status,
             featuredImage: imageUrl,
-            userId: req.user.id
+            userId: req.user.id,
+            userName: req.user.userName,
+            displayName : req.user.displayName
         });
 
         // Cleaned Response: Convert document to plain object and remove internal __v field
