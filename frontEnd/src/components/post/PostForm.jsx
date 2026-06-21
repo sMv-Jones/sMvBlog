@@ -100,9 +100,15 @@ export default function PostForm({ post }) {
                             className="w-full bg-black/30 border border-white/10 rounded-xl focus:border-blue-500 transition focus:ring-1 focus:ring-blue-500"
                             {...register("title", { 
                                 required: "Title is required",
-                                validate: value => 
-                                    (value.trim().replace(/[^a-zA-Z]/g, "").length >= 3) || 
-                                    "Title must contain at least 3 alphabetical characters"
+                                validate: {
+                                    minLength: value => 
+                                        (value.trim().replace(/[^a-zA-Z]/g, "").length >= 3) || 
+                                        "Title must contain at least 3 alphabetical characters",
+                                    maxWords: value => {
+                                        const wordCount = value.trim().split(/\s+/).filter(word => word.length > 0).length;
+                                        return wordCount <= 10 || "Title cannot exceed 10 words";
+                                    }
+                                }
                             })}
                         />
                         {errors.title && (
@@ -186,4 +192,4 @@ export default function PostForm({ post }) {
             </form>
         </div>
     );
-}   
+}

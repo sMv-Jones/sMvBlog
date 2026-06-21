@@ -44,4 +44,8 @@ const postSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+// Index for faster searchs
+postSchema.index({ status: 1, createdAt: -1 });
+postSchema.index({ userName: 1, status: 1 });
+
 export default mongoose.model('Post', postSchema);
