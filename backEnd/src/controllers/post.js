@@ -8,6 +8,19 @@ const nanoid = customAlphabet(
     10
 );
 
+const buildTimeFilter = (timeframe) => {
+    const allowedTimeframes = ['1day', '1week', '1month', '1year'];
+    if (!timeframe || !allowedTimeframes.includes(timeframe)) return null;
+
+    const now = new Date();
+    if (timeframe === '1day') return { $gte: new Date(now - 24 * 60 * 60 * 1000) };
+    if (timeframe === '1week') return { $gte: new Date(now - 7 * 24 * 60 * 60 * 1000) };
+    if (timeframe === '1month') return { $gte: new Date(now.setMonth(now.getMonth() - 1)) };
+    if (timeframe === '1year') return { $gte: new Date(now.setFullYear(now.getFullYear() - 1)) };
+    
+    return null;
+};
+
 export const createPost = async (req, res, next) => {
     try {
         let { title, slug, content, status } = req.body;
@@ -116,20 +129,49 @@ export const getPost = async (req, res, next) => {
 
 export const getPosts = async (req, res, next) => {
     try {
-        // Cleaned Response: Project out __v from arrays
-        const posts = await Post.find({ status: "active" })
+        let { userName, time } = req.query;
+        const filter = { status: "active" };
+
+        // Sanitize and validate userName parameter
+        if (userName) {
+            userName = String(userName).trim();
+            if (/^[a-zA-Z0-9_-]+$/.test(userName)) {
+                filter.userName = userName;
+            } else {
+                return res.status(400).json({ message: "Invalid username format" });
+            }
+        }
+
+        // Validate and apply timeframe query
+        const timeQuery = buildTimeFilter(time);
+        if (timeQuery) {
+            filter.createdAt = timeQuery;
+        }
+
+        const posts = await Post.find(filter)
             .select('-__v')
             .sort({ createdAt: -1 });
+            
         res.json(posts);
     } catch (error) { next(error); }
 };
 
+// 2. Updated: Handled parameters for personal post tracking
 export const getMyPosts = async (req, res, next) => {
     try {
-        // Cleaned Response: Project out __v from arrays
-        const posts = await Post.find({ userId: req.user.id })
+        const { time } = req.query;
+        const filter = { userId: req.user.id };
+
+        // Validate and apply timeframe query
+        const timeQuery = buildTimeFilter(time);
+        if (timeQuery) {
+            filter.createdAt = timeQuery;
+        }
+
+        const posts = await Post.find(filter)
             .select('-__v')
             .sort({ createdAt: -1 });
+            
         res.json(posts);
     } catch (error) { next(error); }
-};  
+};

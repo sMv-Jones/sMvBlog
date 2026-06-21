@@ -20,6 +20,7 @@ import LogoutBtn from "./layout/header/LogOutBtn"
 import PostCard from "./post/PostCard"
 import PostForm from "./post/PostForm"
 import TextEditor from "./post/TextEditor"
+import PostFilter from "./post/PostFilter"
 
 // Export
 export {
@@ -41,5 +42,6 @@ export {
     //post
     PostCard,
     PostForm,
-    TextEditor 
+    TextEditor,
+    PostFilter
 }
