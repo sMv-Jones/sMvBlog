@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-function PostCard({ title, featuredImage, slug, updatedAt, content }) {
+function PostCard({ title, featuredImage, slug, updatedAt, content, userName, displayName }) {
   const cleanSnippet = content
     ? content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
     : ''
@@ -31,7 +31,7 @@ function PostCard({ title, featuredImage, slug, updatedAt, content }) {
           transition-all duration-300
         "
       >
-        {/* IMAGE (fixed height on mobile = IMPORTANT) */}
+        {/* IMAGE */}
         <div className="w-full h-[180px] sm:h-[200px] overflow-hidden">
           <img
             src={featuredImage}
@@ -70,6 +70,22 @@ function PostCard({ title, featuredImage, slug, updatedAt, content }) {
             ">
               {cleanSnippet}
             </p>
+          )}
+
+          {/* AUTHOR SECTION */}
+          {displayName && (
+            <div className="mt-4 pt-3 border-t border-white/5 flex items-center gap-2">
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-white/90">
+                  {displayName}
+                </span>
+                {userName && (
+                  <span className="text-xs text-white/40">
+                    @{userName}
+                  </span>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </article>

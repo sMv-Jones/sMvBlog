@@ -8,7 +8,6 @@ function Home() {
     const [posts, setPosts] = useState([])
     const AuthStatus = useSelector(state => state.auth.status)
     const userData = useSelector(state => state.auth)
-    console.log(userData);
     // ✅ LINTER FIX: Set initial state dynamically. 
     // If the user is logged in, start with loading true. If logged out, start with loading false.
     const [loading, setLoading] = useState(() => !!AuthStatus)

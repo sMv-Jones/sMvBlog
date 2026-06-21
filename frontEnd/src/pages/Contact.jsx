@@ -7,7 +7,6 @@ export default function Contact() {
     const handleSubmit = (e) => {
         e.preventDefault();
         // Handle your form submission logic here (e.g., API endpoint call)
-        console.log("Form Submitted:", formData);
         alert("Thanks for reaching out! This is a demo submission.");
         setFormData({ name: "", email: "", message: "" });
     };

@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 
 export default function Post() {
     const [post, setPost] = useState(null);
+    const [copied, setCopied] = useState(false);
     const { slug } = useParams();
     const navigate = useNavigate();
 
@@ -53,12 +54,43 @@ export default function Post() {
         });
     };
 
+    const handleCopyUsername = (e) => {
+        e.preventDefault();
+        if (!userName) return;
+        
+        navigator.clipboard.writeText(userName).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    };
+
+    const displayName = post?.displayName || post?.userId?.displayName;
+    const userName = post?.userName || post?.userId?.userName;
+
+    // Helper utility to safely get words array
+    const getTitleWords = (titleString) => {
+        if (!titleString) return [];
+        return titleString.trim().split(/\s+/);
+    };
+
+    const titleWords = getTitleWords(post?.title);
+    const isLongTitle = titleWords.length > 5;
+
+    // Hard limit to exactly 10 words
+    const displayedTitle = titleWords.length <= 10 
+        ? post?.title 
+        : titleWords.slice(0, 10).join(" ") + "...";
+
     return post ? (
         <div className="min-h-screen py-10 px-4">
             <Container>
 
                 {/* HERO CARD */}
-                <div className="max-w-5xl mx-auto rounded-3xl border border-white/10 bg-black/60 backdrop-blur-2xl shadow-2xl p-5 md:p-8">
+                <div className={`max-w-5xl mx-auto rounded-3xl p-5 md:p-8 border backdrop-blur-2xl transition-all duration-300 shadow-2xl relative overflow-hidden ${
+                    isAuthor 
+                        ? "border-white/20 bg-zinc-900/70 shadow-[0_0_50px_rgba(255,255,255,0.05)]" 
+                        : "border-white/10 bg-black/60"
+                }`}>
 
                     <div className="flex flex-col md:flex-row gap-6 items-center">
 
@@ -67,23 +99,73 @@ export default function Post() {
                             <img
                                 src={post.featuredImage}
                                 alt={post.title}
-                                className="w-full md:w-72 aspect-square object-cover rounded-2xl border border-white/10 shadow-[0_0_25px_rgba(255,255,255,0.25)]"
+                                className={`w-full md:w-72 aspect-square object-cover rounded-2xl border transition-all duration-300 ${
+                                    isAuthor
+                                        ? "border-white/30 shadow-[0_0_30px_rgba(255,255,255,0.15)]"
+                                        : "border-white/10 shadow-[0_0_25px_rgba(255,255,255,0.25)]"
+                                }`}
                             />
                         </div>
 
-                        {/* TITLE + BUTTONS */}
-                        <div className="flex-1 text-center md:text-left">
+                        {/* TITLE + AUTHOR + BUTTONS */}
+                        <div className="flex-1 text-center md:text-left min-w-0 w-full">
 
-                            <h1 className="
-                                text-xl sm:text-2xl md:text-5xl lg:text-6xl
+                            {/* Dynamic text size adjustments based on length flag */}
+                            <h1 className={`
                                 font-extrabold
                                 text-white
                                 leading-tight
-                            ">
-                                {post.title}
+                                break-words
+                                transition-all duration-200
+                                ${isLongTitle 
+                                    ? "text-lg sm:text-xl md:text-2xl lg:text-3xl" 
+                                    : "text-xl sm:text-2xl md:text-5xl lg:text-6xl"
+                                }
+                            `}>
+                                {displayedTitle}
                             </h1>
 
-                            <div className="h-px bg-white/100 my-5"></div>
+                            {/* AUTHOR BADGE - Completely hidden if it's the user's own post */}
+                            {!isAuthor && displayName && (
+                                <div className="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-2 text-base sm:text-lg">
+                                    <span className="text-white/60 font-medium tracking-wide">
+                                        By <span className="text-white font-bold">{displayName}</span>
+                                    </span>
+                                    
+                                    {userName && (
+                                        <div className="flex items-center gap-2 bg-black/20 border border-white/10 px-3 py-1 rounded-full backdrop-blur-sm">
+                                            <Link 
+                                                to={`/profile/${userName}`}
+                                                className="
+                                                    relative inline-block text-white/90 font-semibold tracking-wide text-sm sm:text-base
+                                                    transition-all duration-300 ease-in-out
+                                                    hover:text-white
+                                                    after:content-[''] after:absolute after:left-0 after:bottom-0 
+                                                    after:w-0 after:h-[1px] after:bg-white 
+                                                    hover:after:w-full after:transition-all after:duration-300
+                                                "
+                                            >
+                                                @{userName}
+                                            </Link>
+
+                                            {/* Copy Button */}
+                                            <button
+                                                onClick={handleCopyUsername}
+                                                className={`text-xs ml-1 px-2 py-0.5 rounded-md font-medium transition-all duration-200 ${
+                                                    copied 
+                                                        ? "bg-green-500/20 text-green-400 border border-green-500/30" 
+                                                        : "bg-white/10 text-white/60 hover:text-white hover:bg-white/20"
+                                                }`}
+                                                title="Copy username"
+                                            >
+                                                {copied ? "Copied!" : "Copy"}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="h-px bg-white/10 my-5"></div>
 
                             {isAuthor && (
                                 <div className="flex gap-3 justify-center md:justify-start">
@@ -110,7 +192,9 @@ export default function Post() {
                 </div>
 
                 {/* CONTENT CARD */}
-                <div className="max-w-5xl mx-auto mt-8 rounded-3xl border border-white/10 bg-black/50 backdrop-blur-xl p-6 md:p-10 shadow-xl">
+                <div className={`max-w-5xl mx-auto mt-8 rounded-3xl border backdrop-blur-xl p-6 md:p-10 shadow-xl transition-all duration-300 ${
+                    isAuthor ? "border-white/15 bg-zinc-900/50" : "border-white/10 bg-black/50"
+                }`}>
 
                     <div className="browser-css prose prose-invert max-w-none text-white/90">
                         {parse(post.content)}
