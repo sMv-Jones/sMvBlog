@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { PostCard } from '../../components/index'
 import postServices from "../../services/post";
-import {PostFilter} from "../../components/index"; // Adjust the import path as needed
+import { PostFilter } from "../../components/index"; // Adjust the import path as needed
 
 function AllPosts() {
   const [posts, setPosts] = useState([])
@@ -19,8 +19,8 @@ function AllPosts() {
     <div className="w-full py-8 px-4 sm:px-6 lg:px-10 text-white">
       {/* Integrated Filter view row */}
       <div className="max-w-7xl mx-auto relative z-40">
-    <PostFilter onApplyFilters={setActiveFilters} hideUsername={true} />
-</div>
+        <PostFilter onApplyFilters={setActiveFilters} hideUsername={true} />
+      </div>
 
       {posts.length === 0 ? (
         /* Handles layout cleanly if filter variables yield 0 articles */
@@ -32,7 +32,7 @@ function AllPosts() {
           </div>
           <h2 className="text-xl font-bold text-white mb-2">No Articles Found</h2>
           <p className="text-sm text-white/50 max-w-sm">
-            No matching items found. Try altering your selected timeframe or change your username search query.
+            No matching items found. Try altering your selected timeframe.
           </p>
         </div>
       ) : (
