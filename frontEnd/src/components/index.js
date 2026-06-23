@@ -2,7 +2,6 @@
 import AuthLayout from "./auth/AuthLayout"
 import Login from "./auth/Login"
 import Signup from "./auth/Signup"
-import ForgotPassword from "./auth/ForgotPassword"
 
 // common
 import Button from "./common/Button"
@@ -28,7 +27,6 @@ export {
     AuthLayout,
     Login,
     Signup,
-    ForgotPassword,
     //common
     Button,
     Input,

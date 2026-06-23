@@ -81,7 +81,7 @@ function Home() {
         <div className="min-h-screen py-10 px-4 text-white">
             <Container>
                 {/* Upper Welcome Header Section */}
-                <div className="max-w-7xl mx-auto mb-10 p-6 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl flex justify-between items-center flex-wrap gap-4 shadow-xl">
+                <div className="max-w-7xl mx-auto mb-10 p-6 rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl flex justify-between items-center flex-wrap gap-4 shadow-xl">
                     <div className="space-y-1">
                         <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white">
                             Welcome back, <span className="text-blue-400">{userData?.userDisplayName || "Developer"}</span>!
@@ -105,7 +105,7 @@ function Home() {
 
                 {/* Main Dynamic View Area */}
                 {posts.length === 0 ? (
-                    <div className="max-w-7xl mx-auto mt-6 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl p-12 text-center flex flex-col items-center shadow-xl">
+                    <div className="max-w-7xl mx-auto mt-6 rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-12 text-center flex flex-col items-center shadow-xl">
                         <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-blue-400 mb-6 shadow-inner">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />

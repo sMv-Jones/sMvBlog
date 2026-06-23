@@ -9,7 +9,17 @@ export class AuthService {
             throw error.response?.data?.message || "Registration failed";
         }
     }
-
+    async verifyEmail(OTP) {
+        try {
+            const response = await API.post('/auth/verify-email', { otp:OTP });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data?.message || "Registration failed";
+        }
+    }
+    async verifyOTP() {
+    // logic hitting your API endpoint (e.g., /api/v1/users/verify)
+}
     async login({ email, password }) {
         try {
             const response = await API.post('/auth/login', { email, password });

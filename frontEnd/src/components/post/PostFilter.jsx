@@ -58,7 +58,7 @@ const PostFilter = ({ onApplyFilters, hideUsername = false }) => {
         <div className="w-full mt-6 mb-8">
             <form 
                 onSubmit={handleSubmit} 
-                className={`flex flex-wrap items-end gap-4 p-5 rounded-2xl border bg-black/40 backdrop-blur-xl shadow-xl transition-all duration-300 ${
+                className={`flex flex-wrap items-end gap-4 p-5 rounded-2xl border bg-black/60 backdrop-blur-xl shadow-xl transition-all duration-300 ${
                     error ? 'border-red-500/30 bg-red-950/10' : 'border-white/10'
                 }`}
             >

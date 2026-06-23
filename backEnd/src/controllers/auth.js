@@ -1,4 +1,7 @@
 import User from '../models/user.js';
+import crypto from 'crypto';
+import OTP from "../models/otp.js"
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import generateUsername from '../utils/uuid.js';
 
@@ -13,7 +16,19 @@ const generateTokenAndSetCookie = (res, userId, userName, displayName) => {
         maxAge: 30 * 24 * 60 * 60 * 1000
     });
 };
-
+const generateOTPCookie = (res, email) => {
+    const token = jwt.sign(
+        { email },
+        process.env.JWT_SECRET,
+        { expiresIn: '5m' }
+    );
+    res.cookie('OTP', token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'None',
+        maxAge: 5 * 60 * 1000 + 20 * 1000
+    });
+}
 export const registerUser = async (req, res, next) => {
     try {
         const { email, password, name } = req.body;
@@ -22,17 +37,81 @@ export const registerUser = async (req, res, next) => {
             res.status(400);
             throw new Error('User already exists');
         }
-        const userName = generateUsername(name);
-        const user = await User.create({ displayName: name, userName: userName, email, password });
 
-        generateTokenAndSetCookie(res, user._id, user.userName, user.displayName );
-
-        // Explicit payload normalization
+        const otp = crypto.randomInt(100000, 1000000).toString();
+        generateOTPCookie(res, email);
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await OTP.deleteMany({ email });
+        await OTP.create({
+            email,
+            otp,
+            data: { email, password: hashedPassword, name }
+        });
         res.status(201).json({
             success: true,
-            user: { _id: user._id, diplayName: user.displayName, uesrName: userName, email: user.email }
         });
     } catch (error) { next(error); }
+};
+
+export const verfiyRegister = async (req, res, next) => {
+    try {
+        const email = req.user.email;
+        const userOTP = req.body.otp;
+        const otpRecord = await OTP.findOne({ email });
+        console.log("UserOTP : ",userOTP);
+        if (!otpRecord) {
+            res.status(404);
+            throw new Error('OTP expired or not found');
+        }
+        if (otpRecord.otp !== req.body.otp) {
+            throw new Error('Invalid OTP');
+        }
+
+        if (String(userOTP) !== String(otpRecord.otp)) {
+            res.status(401);
+            throw new Error('Invalid OTP');
+        }
+
+        const userData = otpRecord.data;
+
+        const userName = generateUsername(userData.name);
+
+        const user = await User.create({
+            displayName: userData.name,
+            userName,
+            email: userData.email,
+            password: userData.password,
+        });
+
+        await OTP.deleteOne({ _id: otpRecord._id });
+
+        generateTokenAndSetCookie(
+            res,
+            user._id,
+            user.userName,
+            user.displayName
+        );
+        res.clearCookie("OTP", {
+            httpOnly: true,
+            secure: true || process.env.NODE_ENV === 'production',
+            sameSite: "none" // Set to "none" if cross-site, matching your setter config
+        });
+        res.status(201).json({
+            success: true,
+            user: {
+                _id: user._id,
+                displayName: user.displayName,
+                userName: user.userName,
+                email: user.email,
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const verfiyOTP = async () => {
+
 };
 
 export const loginUser = async (req, res, next) => {

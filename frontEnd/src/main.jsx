@@ -8,7 +8,7 @@ import App from './App.jsx'
 import store from './store/store'
 import './index.css'
 import { AuthLayout } from './components/index.js'
-import { Login, AddPost, Signup, EditPost, Post, AllPost, Home, NotFound, Contact, About } from './pages/index'
+import { Login, AddPost, Signup, VerifyEmail, Profile, EditPost, Post, AllPost, Home, NotFound, Contact, About, Dashboard } from './pages/index'
 
 
 const router = createBrowserRouter([
@@ -21,6 +21,26 @@ const router = createBrowserRouter([
                 element: <Home />,
             },
             {
+                path: "/about",
+                element: (
+                    <About />
+                ),
+            },
+            {
+                path: "/contact",
+                element: (
+                    <Contact />
+                ),
+            },
+            {
+                path: "/signup",
+                element: (
+                    <AuthLayout authentication={false}>
+                        <Signup />
+                    </AuthLayout>
+                ),
+            },
+            {
                 path: "/login",
                 element: (
                     <AuthLayout authentication={false}>
@@ -29,22 +49,25 @@ const router = createBrowserRouter([
                 ),
             },
             {
-                path: "/about",
-                element: (
-                        <About />
-                ),
-            },
-            {
-                path: "/contact",
-                element: (
-                        <Contact />
-                ),
-            },
-            {
-                path: "/signup",
+                path: "/verify-email",
                 element: (
                     <AuthLayout authentication={false}>
-                        <Signup />
+                        <VerifyEmail />
+                    </AuthLayout>
+                ),
+            },
+            {
+                path: "/profile/:userName",
+                element: (
+                    <AuthLayout authentication={true}>
+                        <Profile />
+                    </AuthLayout>
+                ),
+            },{
+                path: "/dashboard",
+                element: (
+                    <AuthLayout authentication={true}>
+                        <Dashboard />
                     </AuthLayout>
                 ),
             },

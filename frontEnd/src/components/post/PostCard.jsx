@@ -23,7 +23,7 @@ function PostCard({ title, featuredImage, slug, updatedAt, content, userName, di
 
           border border-white/10
 
-          bg-black/40 backdrop-blur-xl
+          bg-black/60 backdrop-blur-xl
 
           shadow-[0_0_18px_rgba(255,255,255,0.08)]
           hover:shadow-[0_0_30px_rgba(255,255,255,0.16)]

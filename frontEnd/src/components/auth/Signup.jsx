@@ -1,14 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
 import { useForm } from 'react-hook-form'
 import authService from '../../services/auth'
-import { login } from '../../store/authSlice'
 import { Button, Input, Logo } from '../index'
 
 function Signup() {
     const navigate = useNavigate()
-    const dispatch = useDispatch()
     const { register, handleSubmit, formState: { errors } } = useForm()
     const [error, setError] = useState("")
 
@@ -16,10 +13,8 @@ function Signup() {
         setError("")
         try {
             const response = await authService.createAccount(data)
-            
             if (response?.success) {
-                dispatch(login(response.user));
-                navigate("/")
+                navigate("/verify-email")
             } else {
                 setError("Account creation failed.")
             }
@@ -89,7 +84,12 @@ function Signup() {
                                     required: "Password is required",
                                     minLength: {
                                         value: 8,
-                                        message: "Password must be at least 8 characters"
+                                        message: "Password must be at least 8 characters long"
+                                    },
+                                    validate: {
+                                        hasUppercase: (value) => /[A-Z]/.test(value) || "Password must contain at least one uppercase letter",
+                                        hasLowercase: (value) => /[a-z]/.test(value) || "Password must contain at least one lowercase letter",
+                                        hasNumber: (value) => /[0-9]/.test(value) || "Password must contain at least one numeric digit",
                                     }
                                 })}
                             />
