@@ -1,7 +1,7 @@
 import express from 'express';
 import * as authCtrl from '../controllers/auth.js';
 import { protect, OTP } from '../middlewares/auth.js';
-import { registerValidation, loginValidation, verifyOtpValidation, updateProfileValidator } from '../validators/auth.js';
+import { registerValidation, loginValidation, verifyOtpValidation, updateProfileValidator, changePasswordValidator, deleteAccountValidator } from '../validators/auth.js';
 import { validate } from '../middlewares/validate.js';
 import { authLimiter } from '../middlewares/rateLimiter.js';
 import { upload } from '../configs/azureStorage.js';
@@ -13,13 +13,13 @@ router.post('/logout', authCtrl.logoutUser);
 router.get('/me', protect, authCtrl.getCurrentUser);
 router.post("/verify-email", OTP, verifyOtpValidation, validate, authCtrl.verfiyRegister);
 router.get("/profile", protect, authCtrl.getProfile)
-router.put("/profile-update", protect, upload.single('profilePhoto'), updateProfileValidator, validate, authCtrl.updateProfile) 
+router.put("/profile-update", protect, upload.single('profilePhoto'), updateProfileValidator, validate, authCtrl.updateProfile)
 
 
-// router.post('/send-password-otp', protect, authCtrl.sendPasswordOtp);
-// router.post('/change-password', protect, authCtrl.changePassword);
-// router.post('/send-delete-otp', protect, authCtrl.sendDeleteAccountOtp);
-// router.delete('/delete-account', protect, authCtrl.deleteAccount);
+router.post('/send-password-otp', protect, authCtrl.sendPasswordOtp);
+router.post('/change-password', protect, changePasswordValidator, validate, authCtrl.changePassword);
+router.post('/send-delete-otp', protect, authCtrl.sendDeleteAccountOtp);
+router.delete('/delete-account', protect, deleteAccountValidator, validate, authCtrl.deleteAccount);
 
 
 export default router;

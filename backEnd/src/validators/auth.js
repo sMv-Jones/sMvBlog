@@ -81,27 +81,23 @@ export const updateProfileValidator = [
  */
 export const changePasswordValidator = [
     body('currentPassword')
-        .notEmpty().withMessage('Current validation password is required'),
-
+        .notEmpty().withMessage('Current password is required.'),
+    
     body('newPassword')
-        .notEmpty().withMessage('New password is required')
-        .isLength({ min: 8 }).withMessage('New secure password must be at least 8 characters long')
-        .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter')
-        .matches(/[a-z]/).withMessage('Password must contain at least one lowercase letter')
-        .matches(/[0-9]/).withMessage('Password must contain at least one numeric digit'),
-
+        .isLength({ min: 8 }).withMessage('New password must be at least 8 characters long.'),
+        
     body('otp')
-        .notEmpty().withMessage('Verification code is required')
-        .matches(/^\d{6}$/).withMessage('OTP must be a 6-digit number')
+        .isLength({ min: 6, max: 6 }).withMessage('OTP must be exactly 6 digits.')
+        .isNumeric().withMessage('OTP must contain numbers only.'),
+        
 ];
 
-/**
- * VALIDATE ACCOUNT DELETION WITH OTP
- */
+// Validation rules for deleting an account
 export const deleteAccountValidator = [
     body('otp')
-        .notEmpty().withMessage('Verification code is required')
-        .matches(/^\d{6}$/).withMessage('OTP must be a 6-digit number')
+        .isLength({ min: 6, max: 6 }).withMessage('OTP must be exactly 6 digits.')
+        .isNumeric().withMessage('OTP must contain numbers only.'),
+        
 ];
 
 /**

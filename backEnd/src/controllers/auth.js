@@ -424,72 +424,6 @@ export const getProfile = async (req, res, next) => {
 };
 
 
-export const verfiyOTP = async (req, res, next) => {
-
-    try {
-
-        await EmailSender(
-
-            email,
-
-            "Password Reset Verification",
-
-            otpTemplate(
-
-                "Reset Your Password",
-
-                "We received a request to reset your password. Use the OTP below to continue.",
-
-                otp
-
-            )
-
-        );
-
-    } catch (error) {
-
-        next(error);
-
-    }
-
-};
-
-
-export const deleteAccount = async (req, res, next) => {
-
-    try {
-
-        const email = req.user.email;
-
-        const id = req.user.id; await Email(
-
-            emailSender,
-
-            "Account Deletion Verification",
-
-            otpTemplate(
-
-                "Confirm Account Deletion",
-
-                "You requested to permanently delete your sMv|Blog account. Use the OTP below to confirm this action.",
-
-                otp
-
-            )
-
-        );
-
-
-    } catch (error) {
-
-        next(error);
-
-    }
-
-
-};
-
-
 export const updateProfile = async (req, res, next) => {
 
     try {
@@ -619,3 +553,164 @@ export const updateProfile = async (req, res, next) => {
     }
 
 }; 
+
+export const sendPasswordOtp = async (req, res, next) => {
+    try {
+        const userName = req.user?.userName;
+        if (!userName) {
+            res.status(401);
+            throw new Error("Unauthorized! Valid session context missing.");
+        }
+
+        // 🔍 Fetch user's email from database using userName from JWT
+        const user = await User.findOne({ userName });
+        if (!user) {
+            res.status(404);
+            throw new Error("User account not found.");
+        }
+
+        const otp = crypto.randomInt(100000, 1000000).toString();
+
+        // Overwrite old OTPs for this email, keeping 'data' as an empty object
+        await OTP.deleteMany({ email: user.email });
+        await OTP.create({
+            email: user.email,
+            otp,
+            data: {} // 💡 Satisfies required: true validation while keeping data clean/empty
+        });
+
+        await emailSender(
+            user.email,
+            "Password Reset Verification",
+            otpTemplate(
+                "Reset Your Password",
+                "We received a request to change your account password. Use the OTP below to proceed safely.",
+                otp
+            )
+        );
+
+        res.status(200).json({ success: true, message: "Security token dispatched to registered email." });
+    } catch (error) { next(error); }
+};
+
+/**
+ * 2. CHANGE PASSWORD
+ */
+export const changePassword = async (req, res, next) => {
+    try {
+        const { currentPassword, newPassword, otp } = req.body;
+        const userName = req.user?.userName;
+
+        const user = await User.findOne({ userName }).select('+password');
+        if (!user) {
+            res.status(404);
+            throw new Error("User account not found.");
+        }
+
+        // Validate operational configuration security token
+        const otpRecord = await OTP.findOne({ email: user.email });
+        if (!otpRecord || otpRecord.otp !== String(otp)) {
+            res.status(400);
+            throw new Error("Invalid or expired operational token code.");
+        }
+
+        // Check password match using model methods
+        const isMatch = await user.matchPassword(currentPassword);
+        if (!isMatch) {
+            res.status(401);
+            throw new Error("Current password provided is incorrect.");
+        }
+
+        // Set the new unhashed password string (your userSchema pre-save hook handles hashing!)
+        user.password = newPassword;
+        await user.save();
+
+        // Clear verification traces
+        await OTP.deleteOne({ _id: otpRecord._id });
+
+        res.status(200).json({ success: true, message: "Security credentials updated successfully." });
+    } catch (error) { next(error); }
+};
+
+/**
+ * 3. DISPATCH ACCOUNT DELETION OTP
+ * Looks up the email via req.user.userName, passes {} to data
+ */
+export const sendDeleteAccountOtp = async (req, res, next) => {
+    try {
+        const userName = req.user?.userName;
+        if (!userName) {
+            res.status(401);
+            throw new Error("Unauthorized! Valid session context missing.");
+        }
+
+        const user = await User.findOne({ userName });
+        if (!user) {
+            res.status(404);
+            throw new Error("User account not found.");
+        }
+
+        const otp = crypto.randomInt(100000, 1000000).toString();
+
+        await OTP.deleteMany({ email: user.email });
+        await OTP.create({
+            email: user.email,
+            otp,
+            data: {} // 💡 Kept empty to satisfy model definitions
+        });
+
+        await emailSender(
+            user.email,
+            "Account Deletion Verification",
+            otpTemplate(
+                "Confirm Account Deletion",
+                "You requested to permanently delete your sMv|Blog account. Use the OTP below to finalize this transaction.",
+                otp
+            )
+        );
+
+        res.status(200).json({ success: true, message: "Deletion token context dispatched safely." });
+    } catch (error) { next(error); }
+};
+
+/**
+ * 4. DELETE ACCOUNT
+ */
+export const deleteAccount = async (req, res, next) => {
+    try {
+        const { otp } = req.body;
+        const userName = req.user?.userName;
+
+        const user = await User.findOne({ userName });
+        if (!user) {
+            res.status(404);
+            throw new Error("User record not found.");
+        }
+
+        const otpRecord = await OTP.findOne({ email: user.email });
+        if (!otpRecord || otpRecord.otp !== String(otp)) {
+            res.status(400);
+            throw new Error("Invalid conversion parameters or expired system token.");
+        }
+
+        // Clean out storage images linked to user profiles if necessary
+        const profile = await Profile.findOne({ userName });
+        if (profile?.profilePhoto && !profile.profilePhoto.startsWith('profilePhoto')) {
+            await deleteFromAzure(profile.profilePhoto);
+        }
+
+        // Atomic data expunging routine
+        await Profile.deleteOne({ userName });
+        await User.deleteOne({ _id: user._id });
+        await OTP.deleteOne({ _id: otpRecord._id });
+
+        // Terminate cookie context variables natively 
+        res.clearCookie("token", { 
+            httpOnly: true, 
+            secure: true, 
+            sameSite: "None" 
+        });
+
+        res.status(200).json({ success: true, message: "Account context safely expunged from database." });
+    } catch (error) { next(error); }
+};
