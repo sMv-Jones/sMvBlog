@@ -11,15 +11,29 @@ export class AuthService {
     }
     async verifyEmail(OTP) {
         try {
-            const response = await API.post('/auth/verify-email', { otp:OTP });
+            const response = await API.post('/auth/verify-email', { otp: OTP });
             return response.data;
         } catch (error) {
             throw error.response?.data?.message || "Registration failed";
         }
     }
-    async verifyOTP() {
-    // logic hitting your API endpoint (e.g., /api/v1/users/verify)
-}
+
+
+    async getProfile(userName) {
+        try {
+            const response = await API.get(
+                `/auth/profile${userName ? "?userName=" + userName : ""}`
+            );
+
+            return response.data;
+        } catch (error) {
+            // return structured error instead of throwing
+            return {
+                success: false,
+                message: error.response?.data?.message || "Network error"
+            };
+        }
+    }
     async login({ email, password }) {
         try {
             const response = await API.post('/auth/login', { email, password });
@@ -45,6 +59,84 @@ export class AuthService {
         } catch (error) {
             console.error("Auth Service :: logout :: error", error);
             return false;
+        }
+    }
+
+    async updateProfile(formData) {
+        try {
+            const { data } = await API.put(`/auth/profile-update`, formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+            return data;
+        } catch (error) {
+            console.error("Profile Update Exception:", error);
+            throw error.response?.data ?? new Error("Connection anomaly encountered during update.");
+        }
+    };
+
+    /**
+      * DISPATCH PASSWORD CHANGE OTP
+      */
+    async sendPasswordOtp() {
+        try {
+            const { data } = await API.post(`/auth/send-password-otp`);
+            return data;
+        } catch (error) {
+            console.error("Password OTP Dispatch Exception:", error);
+            return {
+                success: false,
+                message: error.response?.data?.message || "Failed to generate security token."
+            };
+        }
+    }
+
+    /**
+     * DISPATCH ACCOUNT DELETION OTP
+     */
+    async sendDeleteAccountOtp() {
+        try {
+            const { data } = await API.post(`/auth/send-delete-otp`);
+            return data;
+        } catch (error) {
+            console.error("Delete Account OTP Dispatch Exception:", error);
+            return {
+                success: false,
+                message: error.response?.data?.message || "Failed to generate security token."
+            };
+        }
+    }
+
+    /**
+     * CHANGE PASSWORD
+     * Expects payload: { currentPassword, newPassword, otp }
+     */
+    async changePassword(passwordPayload) {
+        try {
+            const { data } = await API.post(`/auth/change-password`, passwordPayload);
+            return data;
+        } catch (error) {
+            console.error("Credential Modification Exception:", error);
+            return {
+                success: false,
+                message: error.response?.data?.message || "Connection error during password change."
+            };
+        }
+    }
+
+    /**
+     * DELETE ACCOUNT
+     * Expects payload: { otp }
+     */
+    async deleteAccount(deletePayload) {
+        try {
+            const { data } = await API.delete(`/auth/deleteAccount`, { data: deletePayload });
+            return data;
+        } catch (error) {
+            console.error("Account Termination Exception:", error);
+            return {
+                success: false,
+                message: error.response?.data?.message || "Connection error during deletion."
+            };
         }
     }
 }

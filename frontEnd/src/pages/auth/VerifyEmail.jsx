@@ -9,7 +9,7 @@ import { login } from '../../store/authSlice'
 function VerifyEmail() {
     const navigate = useNavigate()
     const dispatch = useDispatch()
-    
+
     const [status, setStatus] = useState("idle")
     const [error, setError] = useState("")
 
@@ -35,7 +35,7 @@ function VerifyEmail() {
     const onKeyDown = (e, index) => {
         // Use getValues() instead of watch() to bypass React Compiler strict checks
         const currentOtpValues = getValues("otp");
-        
+
         if (e.key === "Backspace" && !currentOtpValues[index] && index > 0) {
             inputRefs.current[index - 1].focus();
         }
@@ -44,7 +44,7 @@ function VerifyEmail() {
     const onPaste = (e) => {
         e.preventDefault();
         const pastedData = e.clipboardData.getData("text").trim();
-        
+
         if (/^\d{6}$/.test(pastedData)) {
             const digits = pastedData.split("");
             digits.forEach((digit, idx) => {
@@ -69,9 +69,8 @@ function VerifyEmail() {
                 if (response.user) {
                     dispatch(login(response.user));
                 }
-                setTimeout(() => {
-                    navigate("/dashboard?firstTime=true");
-                }, 1500);
+                navigate("/dashboard?firstTime=true");
+
             } else {
                 setStatus("error");
                 setError(response?.message || "Verification failed.");
@@ -97,8 +96,8 @@ function VerifyEmail() {
                             {status === "loading" ? "Verifying code..." : "Verify Your Email"}
                         </h2>
                         <p className="text-base text-black/60">
-                            {status === "loading" 
-                                ? "Please wait while we validate your credentials." 
+                            {status === "loading"
+                                ? "Please wait while we validate your credentials."
                                 : "Enter the 6-digit verification code sent to your email."
                             }
                         </p>
@@ -155,7 +154,7 @@ function VerifyEmail() {
                         </div>
                         <h2 className="text-2xl font-bold leading-tight text-red-600">Verification Failed</h2>
                         <p className="text-base text-black/60">{error}</p>
-                        
+
                         <div className="space-y-3 pt-2">
                             <Button onClick={() => setStatus("idle")} className="w-full">
                                 Try Again

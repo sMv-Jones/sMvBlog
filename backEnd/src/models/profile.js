@@ -1,38 +1,47 @@
 import mongoose from 'mongoose';
 
 const ProfileSchema = new mongoose.Schema({
-  username: {
+  userName: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    unique: true // Good practice to ensure usernames are unique!
   },
   displayName: {
     type: String,
     required: true,
     trim: true
   },
-  postCount: {
-    type: Number,
-    default: 0
-  },
-  date: {
-    type: Date,
-    default: Date.now
-  },
-  profilePhoto: {
+  email: {
     type: String,
-    default: ''
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please add a valid email']
   },
   bio: {
     type: String,
     trim: true,
     default: ''
   },
-  socialLinks: [
-    {
-      type: String
-    }
-  ]
+  // Aligned with your validator fields:
+  socialLinks: {
+    github: { type: String, default: '' },
+    linkedin: { type: String, default: '' }
+  },
+  postCount: {
+    type: Number,
+    default: 0
+  },
+  profilePhoto: {
+    type: String,
+    default: ''
+  },
+  date: {
+    type: Date,
+    default: Date.now
+  },
 });
 
 export default mongoose.model('Profile', ProfileSchema);

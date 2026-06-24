@@ -2,7 +2,7 @@
 import AuthLayout from "./auth/AuthLayout"
 import Login from "./auth/Login"
 import Signup from "./auth/Signup"
-
+import DeleteConfirmationModal from "./auth/DeleteConfirmationModal"
 // common
 import Button from "./common/Button"
 import Input from "./common/Input"
@@ -27,6 +27,7 @@ export {
     AuthLayout,
     Login,
     Signup,
+    DeleteConfirmationModal,
     //common
     Button,
     Input,

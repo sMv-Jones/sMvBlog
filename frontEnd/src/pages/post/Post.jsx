@@ -132,7 +132,7 @@ export default function Post() {
                                     {userName && (
                                         <div className="flex items-center gap-2 bg-black/20 border border-white/10 px-3 py-1 rounded-full backdrop-blur-sm">
                                             <Link 
-                                                to={`/profile/${userName}`}
+                                                to={`/profile?userName=${userName}`}
                                                 className="relative inline-block text-white/90 font-semibold tracking-wide text-sm sm:text-base transition-all duration-300 ease-in-out hover:text-white after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-[1px] after:bg-white hover:after:w-full after:transition-all after:duration-300"
                                             >
                                                 @{userName}

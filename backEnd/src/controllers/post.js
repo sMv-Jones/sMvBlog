@@ -1,4 +1,5 @@
 import Post from '../models/post.js';
+import Profile from "../models/profile.js"
 import domPurify from "../utils/domPurify.js";
 import { uploadToAzure, deleteFromAzure } from '../configs/azureStorage.js';
 import { customAlphabet } from 'nanoid';
@@ -17,7 +18,7 @@ const buildTimeFilter = (timeframe) => {
     if (timeframe === '1week') return { $gte: new Date(now - 7 * 24 * 60 * 60 * 1000) };
     if (timeframe === '1month') return { $gte: new Date(now.setMonth(now.getMonth() - 1)) };
     if (timeframe === '1year') return { $gte: new Date(now.setFullYear(now.getFullYear() - 1)) };
-    
+
     return null;
 };
 
@@ -45,9 +46,13 @@ export const createPost = async (req, res, next) => {
             featuredImage: imageUrl,
             userId: req.user.id,
             userName: req.user.userName,
-            displayName : req.user.displayName
+            displayName: req.user.displayName
         });
-
+        await Profile.findOneAndUpdate(
+            { userName: req.user.userName },
+            { $inc: { postCount: 1 } }, // Force -1
+            { returnDocument: 'after' }
+        );
         // Cleaned Response: Convert document to plain object and remove internal __v field
         const postResponse = post.toObject();
         delete postResponse.__v;
@@ -113,6 +118,11 @@ export const deletePost = async (req, res, next) => {
 
         await deleteFromAzure(post.featuredImage);
         await post.deleteOne();
+        await Profile.findOneAndUpdate(
+            { userName: req.user.userName },
+            { $inc: { postCount: -1 } }, // Force -1
+            { returnDocument: 'after' }
+        );
 
         res.json({ success: true, message: "Post deleted successfully" });
     } catch (error) { next(error); }
@@ -151,7 +161,7 @@ export const getPosts = async (req, res, next) => {
         const posts = await Post.find(filter)
             .select('-__v')
             .sort({ createdAt: -1 });
-            
+
         res.json(posts);
     } catch (error) { next(error); }
 };
@@ -171,7 +181,7 @@ export const getMyPosts = async (req, res, next) => {
         const posts = await Post.find(filter)
             .select('-__v')
             .sort({ createdAt: -1 });
-            
+
         res.json(posts);
     } catch (error) { next(error); }
 };

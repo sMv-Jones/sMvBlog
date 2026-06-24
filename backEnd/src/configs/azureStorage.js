@@ -1,7 +1,8 @@
 import { BlobServiceClient } from '@azure/storage-blob';
 import multer from 'multer';
 import dotenv from 'dotenv';
-
+ import crypto from "crypto";
+ import path from "path"
 dotenv.config();
 
 // Max file size: 5MB
@@ -49,20 +50,25 @@ export const verifyAzureConnection = async () => {
     }
 };
 
-export const uploadToAzure = async (file) => {
+export const uploadToAzure = async ({ buffer, mimetype, originalname }) => {
     try {
-        const uniquePrefix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-        const blobName = `${uniquePrefix}-${file.originalname.replace(/\s+/g, '_')}`;
+        const extension = path.extname(originalname).toLowerCase();
+        const blobName = `${crypto.randomUUID()}${extension}`;
+
         const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-        
-        await blockBlobClient.uploadData(file.buffer, {
-            blobHTTPHeaders: { blobContentType: file.mimetype }
+
+        await blockBlobClient.uploadData(buffer, {
+            blobHTTPHeaders: {
+                blobContentType: mimetype,
+                blobCacheControl: 'public, max-age=31536000'
+            }
         });
-        
+
         return blockBlobClient.url;
+
     } catch (error) {
-        console.error("Azure Storage Service :: uploadToAzure :: error", error);
-        throw new Error("Failed to upload image to cloud storage");
+        console.error('Azure Storage :: uploadToAzure ::', error.message);
+        throw new Error('Failed to upload image to cloud storage');
     }
 };
 

@@ -1,39 +1,44 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Container } from "../components/index";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import authService from "../services/auth";
+import { Container, DeleteConfirmationModal, Button, Input } from "../components/index";
 
-// ==========================================
-// 1. DYNAMIC INITIAL STORAGE MATRIX
-// ==========================================
-const INITIAL_USER_DATA = {
-    username: "smv_dev",
-    displayName: "S.M.V. Engineer",
-    email: "engineering@smvblog.com",
-    dateJoined: "Jan 2024",
-    blogCount: 14,
-    profilePhoto: "favicon.png",
-    bio: "Full-stack developer architecting scalable engines, deep-diving into indexing algorithms, and occasionally writing front-end glassmorphism wrappers.",
-    github: "https://github.com",
-    linkedin: "https://linkedin.com",
-    twitter: "https://twitter.com"
-};
+export default function Dashboard() {
+    // Core user properties sourced from global Redux context
+    const userName = useSelector((state) => state.auth?.userName);
+    const email = useSelector((state) => state.auth?.userEmail);
+    const userDisplayName = useSelector((state) => state.auth?.userDisplayName);
+    
+    const navigate = useNavigate();
 
-// ==========================================
-// 2. COMPONENT MODULE
-// ==========================================
-export default function ProfileDashboard() {
-    const [userData, setUserData] = useState(INITIAL_USER_DATA);
+    const [userData, setUserData] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
+    
+    // States for password modification with OTP sequence
     const [isChangingPassword, setIsChangingPassword] = useState(false);
+    const [passwordOtpSent, setPasswordOtpSent] = useState(false);
+    const [passwordOtpLoading, setPasswordOtpLoading] = useState(false);
 
-    // React Hook Form Instances
+    // States for account deletion with OTP sequence
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteOtpSent, setDeleteOtpSent] = useState(false);
+    const [deleteOtpLoading, setDeleteOtpLoading] = useState(false);
+    const [deleteOtpValue, setDeleteOtpValue] = useState("");
+    
+    // Local memory tracking file upload image preview streams
+    const [photoPreview, setPhotoPreview] = useState(null);
+
+    // Form setup targeting profile data
     const { 
         register: registerProfile, 
         handleSubmit: handleProfileSubmit, 
         reset: resetProfile,
         formState: { errors: profileErrors } 
-    } = useForm({ defaultValues: userData });
+    } = useForm();
 
+    // Form setup targeting password configuration
     const { 
         register: registerPassword, 
         handleSubmit: handlePasswordSubmit, 
@@ -42,78 +47,226 @@ export default function ProfileDashboard() {
         formState: { errors: passwordErrors } 
     } = useForm();
 
-    // Profile Submit Action
-    const onProfileSubmit = (data) => {
-        setUserData(data);
-        setIsEditing(false);
-        console.log("Dispatched profile updates payload to API:", data);
-    };
+    // Pull database profile configuration values on initialization
+    useEffect(() => {
+        async function loadProfileData() {
+            if (!userName) return;
+            try {
+                const data = await authService.getProfile(userName);
+                
+                if (data?.success && data?.profile) {
+                    setUserData(data.profile);
+                    resetProfile({
+                        bio: data.profile.bio || "",
+                        socialLinks: data.profile.socialLinks || { github: "", linkedin: "" }
+                    });
+                } else {
+                    console.warn("Profile payload missing or unsuccessful execution:", data?.message);
+                    const fallbackData = {
+                        bio: "",
+                        socialLinks: { github: "", linkedin: "" },
+                        displayName: userDisplayName || "User",
+                        profilePhoto: "",
+                        postCount: 0
+                    };
+                    setUserData(fallbackData);
+                    resetProfile({
+                        bio: fallbackData.bio,
+                        socialLinks: fallbackData.socialLinks
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to fetch profile:", err);
+            }
+        }
+        loadProfileData();
+    }, [userName, resetProfile, userDisplayName]);
 
-    const handleProfileCancel = () => {
-        resetProfile(userData); 
-        setIsEditing(false);
-    };
+    const onProfileSubmit = async (data) => {
+        try {
+            const formData = new FormData();
+            formData.append("bio", data.bio || "");
+            
+            if (data.socialLinks) {
+                Object.keys(data.socialLinks).forEach(platform => {
+                    formData.append(`socialLinks[${platform}]`, data.socialLinks[platform] || "");
+                });
+            }
 
-    // Password Submit Action
-    const onPasswordSubmit = (data) => {
-        console.log("Dispatched credential payload to validation layer:", {
-            currentPassword: data.currentPassword,
-            newPassword: data.newPassword
-        });
-        alert("Password updated successfully inside local context.");
-        resetPassword();
-        setIsChangingPassword(false);
-    };
+            if (data.profilePhotoFile && data.profilePhotoFile[0]) {
+                formData.append("profilePhoto", data.profilePhotoFile[0]);
+            }
 
-    const handleDeleteAccount = () => {
-        const confirmation = window.confirm("CRITICAL WARNING: Are you sure you want to permanently erase this profile metadata and all linked engineering journals?");
-        if (confirmation) {
-            console.warn("Account deletion engine triggered.");
+            const response = await authService.updateProfile(formData);
+            
+            if (response?.success && response?.profile) {
+                setUserData(response.profile);
+                resetProfile({
+                    bio: response.profile.bio || "",
+                    socialLinks: response.profile.socialLinks || { github: "", linkedin: "" }
+                });
+                setPhotoPreview(null);
+                setIsEditing(false);
+                alert("Profile updated successfully!");
+            } else {
+                alert("Looks like something went wrong on the server. Please try again.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("We ran into an error saving your changes.");
         }
     };
 
+    const handleProfileCancel = () => {
+        if (userData) {
+            resetProfile({
+                bio: userData.bio || "",
+                socialLinks: userData.socialLinks || { github: "", linkedin: "" }
+            });
+        }
+        setPhotoPreview(null);
+        setIsEditing(false);
+    };
+
+    // Step 1: Trigger password adjustment OTP request
+    const requestPasswordOtp = async () => {
+        setPasswordOtpLoading(true);
+        try {
+            const response = await authService.sendPasswordOtp();
+            if (response?.success) {
+                setPasswordOtpSent(true);
+                alert(`Security validation code sent to ${email}`);
+            } else {
+                alert(response?.message || "Could not dispatch verification code.");
+            }
+        } catch (err) {
+            console.error("OTP send failure:", err);
+            alert("Network error while generating security handshake context.");
+        } finally {
+            setPasswordOtpLoading(false);
+        }
+    };
+
+    // Step 2: Finalize password change with OTP
+    const onPasswordSubmit = async (data) => {
+        try {
+            const response = await authService.changePassword({
+                currentPassword: data.currentPassword,
+                newPassword: data.newPassword,
+                otp: data.passwordOtp
+            });
+            if (response?.success) {
+                alert("Password changed successfully!");
+                resetPassword();
+                setIsChangingPassword(false);
+                setPasswordOtpSent(false);
+            } else {
+                alert(response?.message || "Current password or verification code didn't match.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Could not update password at this time.");
+        }
+    };
+
+    // Step 1: Open modal and dispatch delete confirmation OTP
+    const openDeleteFlow = async () => {
+        setIsDeleteModalOpen(true);
+        setDeleteOtpLoading(true);
+        try {
+            const response = await authService.sendDeleteAccountOtp();
+            if (response?.success) {
+                setDeleteOtpSent(true);
+            } else {
+                alert(response?.message || "Unable to dispatch confirmation token.");
+                setIsDeleteModalOpen(false);
+            }
+        } catch (err) {
+            console.error("Account termination OTP handshake failed:", err);
+            alert("Security challenge routing malfunctioned.");
+            setIsDeleteModalOpen(false);
+        } finally {
+            setDeleteOtpLoading(false);
+        }
+    };
+
+    // Step 2: Conclude account destruction process with verification code
+    const handleConfirmDelete = async () => {
+        if (!deleteOtpValue.trim()) {
+            alert("Please input the verification code sent to your account email context.");
+            return;
+        }
+        try {
+            const response = await authService.deleteAccount({ otp: deleteOtpValue });
+            if (response?.success) {
+                setIsDeleteModalOpen(false);
+                navigate("/login");
+            } else {
+                alert(response?.message || "Invalid verification code sequence. Operation aborted.");
+            }
+        } catch (err) {
+            console.error("Account deletion execution failure:", err);
+            alert("Could not complete account destruction routine.");
+        }
+    };
+
+    if (!userData) {
+        return (
+            <div className="min-h-screen flex items-center justify-center text-white/40 text-base font-medium bg-neutral-950">
+                Getting everything ready for you...
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen py-10 px-4 text-white">
+        <div className="min-h-screen py-12 px-4 md:px-8 text-white">
             <Container>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                     
                     {/* LEFT COLUMN: LIVE PROFILE SYNC VIEW */}
-                    <aside className="lg:col-span-1 rounded-3xl border border-white/10 bg-black/60 backdrop-blur-2xl shadow-2xl p-6 text-center lg:sticky lg:top-10">
-                        <div className="relative w-32 h-32 mx-auto mb-4">
+                    <aside className="lg:col-span-1 rounded-3xl border border-white/10 bg-black/60 p-6 text-center lg:sticky lg:top-10 shadow-xl backdrop-blur-md">
+                        <div className="relative w-40 h-40 mx-auto mb-5">
                             <img 
-                                src={userData.profilePhoto} 
-                                alt="Avatar Frame" 
-                                className="w-full h-full object-cover rounded-full border border-white/10 p-1"
+                                src={ photoPreview || userData.profilePhoto || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80" } 
+                                alt="Profile Avatar" 
+                                className="w-full h-full object-cover rounded-full border border-white/10 p-1 bg-neutral-900"
                             />
+                            {photoPreview && (
+                                <span className="absolute bottom-1 right-1 bg-blue-600 text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded-full shadow-lg border border-white/10">
+                                    New
+                                </span>
+                            )}
                         </div>
 
-                        <h1 className="text-2xl font-extrabold tracking-tight">{userData.displayName}</h1>
-                        <p className="text-blue-500 text-sm font-medium mb-1">@{userData.username}</p>
-                        <p className="text-white/40 text-xs font-mono mb-4">{userData.email}</p>
+                        <h1 className="text-2xl font-black tracking-tight text-white">
+                            {userDisplayName || userData.displayName}
+                        </h1>
+                        <p className="text-blue-400 text-base font-semibold mb-1">@{userName}</p>
+                        <p className="text-white/40 text-sm font-mono mb-4">{email}</p>
                         
-                        <p className="text-xs text-white/50 mb-4">
-                            Joined: <span className="text-white/80 font-medium">{userData.dateJoined}</span>
+                        <p className="text-sm text-white/50 mb-5">
+                            Member since: <span className="text-white/80 font-medium">{userData.date ? new Date(userData.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "Recently"}</span>
                         </p>
 
-                        <div className="h-px bg-white/10 my-4"></div>
+                        <div className="h-px bg-white/5 my-4"></div>
 
-                        <p className="text-white/70 text-sm leading-relaxed mb-6 text-left">
-                            {userData.bio || <span className="text-white/30 italic">No biographical payload provided.</span>}
+                        <p className="text-white/70 text-base leading-relaxed mb-6 text-left p-4 rounded-2xl bg-neutral-950/40 border border-white/5">
+                            {userData.bio || <span className="text-white/30 italic">No bio written yet. Tell us a bit about yourself!</span>}
                         </p>
 
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-3 mb-6">
-                            <span className="block text-xs text-white/50 uppercase tracking-wider font-semibold">Post Logs</span>
-                            <span className="text-2xl font-bold text-white">{userData.blogCount}</span>
+                        <div className="bg-neutral-950/60 border border-white/5 rounded-2xl p-4 mb-6 flex justify-between items-center">
+                            <span className="text-xs text-white/40 uppercase tracking-widest font-bold">Total Posts</span>
+                            <span className="text-3xl font-black text-white">{userData.postCount || userData.blogCount || 0}</span>
                         </div>
 
                         <div className="flex flex-wrap justify-center gap-2">
-                            {['github', 'linkedin', 'twitter'].map((platform) => userData[platform] && (
+                            {['github', 'linkedin'].map((platform) => userData.socialLinks?.[platform] && (
                                 <a 
                                     key={platform}
-                                    href={userData[platform]} 
+                                    href={userData.socialLinks[platform]} 
                                     target="_blank" 
                                     rel="noreferrer"
-                                    className="px-3 py-1 text-xs font-medium rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-blue-500 hover:text-white transition-all duration-200 capitalize"
+                                    className="px-4 py-2 text-sm font-semibold rounded-xl bg-neutral-950 border border-white/10 text-white/70 hover:border-blue-500/50 hover:text-blue-400 transition-all duration-200 capitalize"
                                 >
                                     {platform}
                                 </a>
@@ -121,215 +274,225 @@ export default function ProfileDashboard() {
                         </div>
                     </aside>
 
-                    {/* RIGHT COLUMN: INTERACTIVE FORM CONSOLE */}
+                    {/* RIGHT COLUMN: INTERACTIVE MUTATION CONSOLE */}
                     <main className="lg:col-span-2 space-y-6">
                         
-                        {/* PROFILE CONFIGURATION ENGINE CARD */}
-                        <section className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-2xl shadow-2xl p-6 md:p-8">
-                            <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
+                        {/* PROFILE EDIT CONTAINER */}
+                        <section className="rounded-3xl border border-white/10 bg-black/60 p-6 md:p-8 shadow-xl backdrop-blur-md">
+                            <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
                                 <div>
-                                    <h2 className="text-2xl font-extrabold">Profile Management</h2>
-                                    <p className="text-sm text-white/50 mt-1">Update your public structural developer footprint identity details.</p>
+                                    <h2 className="text-xl font-black tracking-tight">Edit Profile</h2>
+                                    <p className="text-sm text-white/50 mt-0.5">Update your bio, social handles, and avatar image.</p>
                                 </div>
                                 {!isEditing && (
-                                    <button 
-                                        onClick={() => setIsEditing(true)}
-                                        className="px-4 py-2 text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl transition-all duration-200"
-                                    >
+                                    <Button onClick={() => setIsEditing(true)} className="text-sm py-2 px-5 font-semibold">
                                         Edit Details
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
 
-                            <form onSubmit={handleProfileSubmit(onProfileSubmit)} className="space-y-5">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Display Name Input */}
-                                    <div>
-                                        <label className="block text-xs font-semibold text-blue-400 mb-2">Display Name</label>
+                            <form onSubmit={handleProfileSubmit(onProfileSubmit)} className="space-y-5" encType="multipart/form-data">
+                                
+                                {/* Image Uploader */}
+                                {isEditing && (
+                                    <div className="bg-neutral-950/40 border border-dashed border-white/10 rounded-2xl p-4 transition-all duration-200">
+                                        <label className="block text-sm font-bold text-blue-400 uppercase tracking-widest mb-2">
+                                            Upload Profile Picture
+                                        </label>
                                         <input 
-                                            type="text" 
-                                            disabled={!isEditing}
-                                            {...registerProfile("displayName", { required: "Display name is required" })}
-                                            className="w-full bg-white/5 disabled:bg-transparent border border-white/10 disabled:border-white/5 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-white transition-all duration-200"
-                                        />
-                                        {profileErrors.displayName && <p className="text-red-400 text-xs mt-1">{profileErrors.displayName.message}</p>}
-                                    </div>
-
-                                    {/* Username Input */}
-                                    <div>
-                                        <label className="block text-xs font-semibold text-blue-400 mb-2">Username Identifier</label>
-                                        <input 
-                                            type="text" 
-                                            disabled={!isEditing}
-                                            {...registerProfile("username", { 
-                                                required: "Username is required",
-                                                pattern: { value: /^[a-zA-Z0-9_]+$/, message: "Alphanumeric and underscores only" }
+                                            type="file" 
+                                            accept="image/*"
+                                            {...registerProfile("profilePhotoFile", {
+                                                onChange: (e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        const reader = new FileReader();
+                                                        reader.onloadend = () => {
+                                                            setPhotoPreview(reader.result);
+                                                        };
+                                                        reader.readAsDataURL(file);
+                                                    }
+                                                }
                                             })}
-                                            className="w-full bg-white/5 disabled:bg-transparent border border-white/10 disabled:border-white/5 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-white transition-all duration-200"
+                                            className="w-full text-sm text-white/40 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border file:border-white/10 file:text-sm file:font-semibold file:bg-neutral-900 file:text-white/80 hover:file:bg-neutral-800 file:transition-colors file:cursor-pointer cursor-pointer"
                                         />
-                                        {profileErrors.username && <p className="text-red-400 text-xs mt-1">{profileErrors.username.message}</p>}
                                     </div>
-                                </div>
-
-                                {/* Email Input */}
-                                <div>
-                                    <label className="block text-xs font-semibold text-blue-400 mb-2">Email Address Connection</label>
-                                    <input 
-                                        type="email" 
-                                        disabled={!isEditing}
-                                        {...registerProfile("email", { 
-                                            required: "Email is required",
-                                            pattern: { value: /^\S+@\S+$/i, message: "Invalid email syntax structure" }
-                                        })}
-                                        className="w-full bg-white/5 disabled:bg-transparent border border-white/10 disabled:border-white/5 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-white transition-all duration-200"
-                                    />
-                                    {profileErrors.email && <p className="text-red-400 text-xs mt-1">{profileErrors.email.message}</p>}
-                                </div>
+                                )}
 
                                 {/* Bio Input */}
                                 <div>
-                                    <label className="block text-xs font-semibold text-blue-400 mb-2">Biographical Ledger</label>
+                                    <label className="block text-sm font-bold text-white/50 uppercase tracking-widest mb-2">Bio</label>
                                     <textarea 
-                                        rows="3"
+                                        rows="4"
                                         disabled={!isEditing}
-                                        {...registerProfile("bio", { maxLength: { value: 300, message: "Maximum 300 character constraint" } })}
-                                        className="w-full bg-white/5 disabled:bg-transparent border border-white/10 disabled:border-white/5 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-white resize-none transition-all duration-200"
+                                        {...registerProfile("bio", { maxLength: { value: 300, message: "Keep it under 300 characters!" } })}
+                                        className="w-full bg-neutral-950/60 disabled:bg-neutral-950/20 border border-white/10 disabled:border-white/5 rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500/50 text-white/90 disabled:text-white/40 placeholder-white/20 resize-none transition-all duration-200"
+                                        placeholder="Write a little something about yourself..."
                                     />
-                                    {profileErrors.bio && <p className="text-red-400 text-xs mt-1">{profileErrors.bio.message}</p>}
+                                    {profileErrors.bio && <p className="text-red-400 text-sm mt-1.5 font-medium">{profileErrors.bio.message}</p>}
                                 </div>
 
-                                <div className="h-px bg-white/10 my-4"></div>
+                                <div className="h-px bg-white/5 my-4"></div>
 
-                                {/* Social Links Mapping */}
-                                <div className="space-y-3">
-                                    <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider">Social Architecture Matrix Links</h3>
-                                    {['github', 'linkedin', 'twitter'].map((platform) => (
-                                        <div key={platform} className="flex flex-col gap-1">
-                                            <div className="flex items-center gap-2">
-                                                <span className="w-20 text-xs capitalize text-white/60 font-medium">{platform}:</span>
-                                                <input 
-                                                    type="text" 
-                                                    disabled={!isEditing}
-                                                    {...registerProfile(platform)}
-                                                    className="w-full bg-white/5 disabled:bg-transparent border border-white/10 disabled:border-white/5 rounded-xl px-4 py-1.5 text-xs focus:outline-none focus:border-blue-500 text-white/80 transition-all duration-200"
-                                                />
-                                            </div>
-                                        </div>
-                                    ))}
+                                {/* Social Links mapping custom Input */}
+                                <div className="space-y-4">
+                                    <h3 className="text-sm font-bold text-white/30 uppercase tracking-widest">Social Links</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {['github', 'linkedin'].map((platform) => (
+                                            <Input 
+                                                key={platform}
+                                                label={platform.charAt(0).toUpperCase() + platform.slice(1)}
+                                                disabled={!isEditing}
+                                                type="text"
+                                                className="!bg-neutral-950/60 !text-white !border-white/10 focus:!bg-neutral-900 focus:!border-blue-500/50 text-base rounded-xl px-4 py-3"
+                                                placeholder={`https://${platform}.com/username`}
+                                                {...registerProfile(`socialLinks.${platform}`)}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
 
                                 {isEditing && (
-                                    <div className="flex items-center justify-end gap-2 pt-4 border-t border-white/10">
+                                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/5">
                                         <button 
                                             type="button" 
                                             onClick={handleProfileCancel}
-                                            className="px-4 py-2 text-xs font-semibold text-white/70 hover:text-white transition-colors duration-200"
+                                            className="px-5 py-2 text-sm font-bold text-white/50 hover:text-white transition-colors duration-200"
                                         >
                                             Cancel
                                         </button>
-                                        <button 
-                                            type="submit"
-                                            className="px-5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-lg shadow-blue-500/20 transition-all duration-200"
-                                        >
-                                            Commit Updates
-                                        </button>
+                                        <Button type="submit" className="text-sm py-2 px-5 font-semibold">
+                                            Save Changes
+                                        </Button>
                                     </div>
                                 )}
                             </form>
                         </section>
 
-                        {/* PASSWORD MODIFICATION LIVE DROPDOWN WITH VALIDATION */}
-                        <section className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-2xl shadow-2xl p-6 md:p-8 space-y-6">
+                        {/* PASSWORD MODIFICATION TERMINAL */}
+                        <section className="rounded-3xl border border-white/10 bg-black/60 p-6 md:p-8 shadow-xl backdrop-blur-md space-y-6">
                             <div>
-                                <h2 className="text-xl font-extrabold text-white">Critical Operations Terminal</h2>
-                                <p className="text-sm text-white/50 mt-1">Sensitive actions governing encryption validation records and account lifecycle limits.</p>
+                                <h2 className="text-xl font-black tracking-tight text-white">Account Settings</h2>
+                                <p className="text-sm text-white/50 mt-0.5">Manage your secret access credentials and account state.</p>
                             </div>
                             
                             {!isChangingPassword ? (
-                                <div className="flex flex-wrap gap-4 items-center pt-2">
-                                    <button
-                                        onClick={() => setIsChangingPassword(true)}
-                                        className="px-4 py-2.5 text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all duration-200"
-                                    >
-                                        Modify Password Auth
-                                    </button>
+                                <div className="flex flex-wrap gap-3 items-center pt-2">
+                                    <Button onClick={() => setIsChangingPassword(true)} className="text-sm py-2 px-5 font-semibold">
+                                        Change Password
+                                    </Button>
 
-                                    <button
-                                        onClick={handleDeleteAccount}
-                                        className="px-4 py-2.5 text-xs font-semibold bg-red-950/20 hover:bg-red-900/40 border border-red-500/30 text-red-400 hover:text-red-300 rounded-xl transition-all duration-200"
+                                    <Button 
+                                        onClick={openDeleteFlow}
+                                        bgColor="bg-red-950/20 hover:bg-red-950/40"
+                                        textColor="text-red-400 hover:text-red-300"
+                                        className="border border-red-500/20 text-sm py-2 px-5 font-semibold"
                                     >
-                                        Delete Account Log
-                                    </button>
+                                        Delete Account
+                                    </Button>
                                 </div>
                             ) : (
-                                <form onSubmit={handlePasswordSubmit(onPasswordSubmit)} className="space-y-4 border-t border-white/10 pt-4 animate-fadeIn">
-                                    <h3 className="text-sm font-semibold text-blue-400 uppercase tracking-wider mb-2">Update Security Token</h3>
+                                <form onSubmit={handlePasswordSubmit(onPasswordSubmit)} className="space-y-4 border-t border-white/5 pt-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h3 className="text-sm font-bold text-blue-400 uppercase tracking-widest">Update Password</h3>
+                                        {passwordOtpSent && (
+                                            <span className="text-xs font-mono text-emerald-400 bg-emerald-950/30 px-3 py-1 rounded-full border border-emerald-500/20">
+                                                Verification Token Dispatched
+                                            </span>
+                                        )}
+                                    </div>
                                     
-                                    <div>
-                                        <label className="block text-xs text-white/60 mb-2">Current Verification Password</label>
-                                        <input 
+                                    <div className="max-w-md">
+                                        <Input 
+                                            label="Current Password"
                                             type="password"
-                                            {...registerPassword("currentPassword", { required: "Current password is mandatory" })}
-                                            className="w-full max-w-md bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 text-white transition-all duration-200"
+                                            disabled={passwordOtpSent}
+                                            className="!bg-neutral-950/60 !text-white !border-white/10 focus:!bg-neutral-900 focus:!border-blue-500/50 text-base rounded-xl px-4 py-3 disabled:opacity-40"
+                                            {...registerPassword("currentPassword", { required: "Please enter your current password" })}
                                         />
-                                        {passwordErrors.currentPassword && <p className="text-red-400 text-xs mt-1">{passwordErrors.currentPassword.message}</p>}
+                                        {passwordErrors.currentPassword && <p className="text-red-400 text-sm mt-1.5 font-medium">{passwordErrors.currentPassword.message}</p>}
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
-                                        {/* New Password Field - Structured validation setup */}
                                         <div>
-                                            <label className="block text-xs text-white/60 mb-2">New Secure Password</label>
-                                            <input 
+                                            <Input 
+                                                label="New Password"
                                                 type="password"
+                                                disabled={passwordOtpSent}
+                                                className="!bg-neutral-950/60 !text-white !border-white/10 focus:!bg-neutral-900 focus:!border-blue-500/50 text-base rounded-xl px-4 py-3 disabled:opacity-40"
                                                 {...registerPassword("newPassword", { 
-                                                    required: "Password is required",
-                                                    minLength: {
-                                                        value: 8,
-                                                        message: "Password must be at least 8 characters long"
-                                                    },
+                                                    required: "Please choose a new password",
+                                                    minLength: { value: 8, message: "Must be at least 8 characters long" },
                                                     validate: {
-                                                        hasUppercase: (value) => /[A-Z]/.test(value) || "Password must contain at least one uppercase letter",
-                                                        hasLowercase: (value) => /[a-z]/.test(value) || "Password must contain at least one lowercase letter",
-                                                        hasNumber: (value) => /[0-9]/.test(value) || "Password must contain at least one numeric digit",
+                                                        hasUppercase: (value) => /[A-Z]/.test(value) || "Needs an uppercase letter",
+                                                        hasLowercase: (value) => /[a-z]/.test(value) || "Needs a lowercase letter",
+                                                        hasNumber: (value) => /[0-9]/.test(value) || "Needs at least one number",
                                                     }
                                                 })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 text-white transition-all duration-200"
                                             />
-                                            {passwordErrors.newPassword && <p className="text-red-400 text-xs mt-1">{passwordErrors.newPassword.message}</p>}
+                                            {passwordErrors.newPassword && <p className="text-red-400 text-sm mt-1.5 font-medium">{passwordErrors.newPassword.message}</p>}
                                         </div>
 
-                                        {/* Confirm Password Field */}
                                         <div>
-                                            <label className="block text-xs text-white/60 mb-2">Confirm New Password</label>
-                                            <input 
+                                            <Input 
+                                                label="Confirm New Password"
                                                 type="password"
+                                                disabled={passwordOtpSent}
+                                                className="!bg-neutral-950/60 !text-white !border-white/10 focus:!bg-neutral-900 focus:!border-blue-500/50 text-base rounded-xl px-4 py-3 disabled:opacity-40"
                                                 {...registerPassword("confirmPassword", { 
-                                                    required: "Please confirm your password",
-                                                    validate: (value) => value === getPasswordValues("newPassword") || "Passwords do not match"
+                                                    required: "Please re-type your new password",
+                                                    validate: (value) => value === getPasswordValues("newPassword") || "Passwords don't match"
                                                 })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 text-white transition-all duration-200"
                                             />
-                                            {passwordErrors.confirmPassword && <p className="text-red-400 text-xs mt-1">{passwordErrors.confirmPassword.message}</p>}
+                                            {passwordErrors.confirmPassword && <p className="text-red-400 text-sm mt-1.5 font-medium">{passwordErrors.confirmPassword.message}</p>}
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-2 pt-2">
+                                    {/* Inline Conditional Verification Frame */}
+                                    {passwordOtpSent && (
+                                        <div className="max-w-xs animate-fadeIn pt-2">
+                                            <Input 
+                                                label="Security Verification Code (OTP)"
+                                                type="text"
+                                                placeholder="X-X-X-X-X-X"
+                                                maxLength={6}
+                                                className="!bg-neutral-950/60 !text-white !border-blue-500/30 text-center text-lg font-mono tracking-widest rounded-xl px-4 py-3"
+                                                {...registerPassword("passwordOtp", { 
+                                                    required: "Enter security key verification digits to authenticate",
+                                                    minLength: { value: 6, message: "OTP must contain 6 digits" }
+                                                })}
+                                            />
+                                            {passwordErrors.passwordOtp && <p className="text-red-400 text-sm mt-1.5 font-medium">{passwordErrors.passwordOtp.message}</p>}
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center gap-3 pt-4 border-t border-white/5">
                                         <button 
                                             type="button"
                                             onClick={() => {
                                                 setIsChangingPassword(false);
+                                                setPasswordOtpSent(false);
                                                 resetPassword();
                                             }}
-                                            className="px-4 py-2 text-xs font-semibold text-white/70 hover:text-white transition-colors duration-200"
+                                            className="px-5 py-2 text-sm font-bold text-white/50 hover:text-white transition-colors duration-200"
                                         >
-                                            Dismiss
+                                            Cancel
                                         </button>
-                                        <button 
-                                            type="submit"
-                                            className="px-5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-lg shadow-blue-500/20 transition-all duration-200"
-                                        >
-                                            Update Password
-                                        </button>
+                                        
+                                        {!passwordOtpSent ? (
+                                            <Button 
+                                                type="button" 
+                                                onClick={requestPasswordOtp} 
+                                                disabled={passwordOtpLoading}
+                                                className="text-sm py-2 px-5 font-semibold"
+                                            >
+                                                {passwordOtpLoading ? "Sending Code..." : "Request Verification Code"}
+                                            </Button>
+                                        ) : (
+                                            <Button type="submit" className="text-sm py-2 px-5 font-semibold bg-blue-600 hover:bg-blue-500">
+                                                Confirm Identity & Update
+                                            </Button>
+                                        )}
                                     </div>
                                 </form>
                             )}
@@ -339,6 +502,42 @@ export default function ProfileDashboard() {
 
                 </div>
             </Container>
+
+            {/* INTEGRATED DELETE CONFIRMATION MODAL COMPONENTS OVERLAY WITH INLINE OTP ENTRY */}
+            <DeleteConfirmationModal 
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setDeleteOtpSent(false);
+                    setDeleteOtpValue("");
+                }}
+                onConfirm={handleConfirmDelete}
+                title="Permanently Delete Account?"
+                message={
+                    deleteOtpLoading 
+                    ? "Generating security signature and sending validation token..." 
+                    : "This will completely remove your personal database entries, including profile pictures, articles, and configuration details. This cannot be undone."
+                }
+            >
+                {deleteOtpSent && (
+                    <div className="mt-5 space-y-3 border-t border-white/10 pt-4 text-left">
+                        <label className="block text-xs font-bold text-red-400 uppercase tracking-widest">
+                            Enter Security OTP Sent To Your Email
+                        </label>
+                        <input 
+                            type="text"
+                            value={deleteOtpValue}
+                            maxLength={6}
+                            onChange={(e) => setDeleteOtpValue(e.target.value.replace(/\D/g, ""))}
+                            placeholder="6-digit code"
+                            className="w-full bg-neutral-950/80 border border-red-500/20 text-white rounded-xl px-4 py-3 text-center text-lg font-mono tracking-widest focus:outline-none focus:border-red-500/50 transition-all"
+                        />
+                        <p className="text-xs text-white/40">
+                            Account destruction parameters require immediate authorization keys before final system wipes.
+                        </p>
+                    </div>
+                )}
+            </DeleteConfirmationModal>
         </div>
     );
 }

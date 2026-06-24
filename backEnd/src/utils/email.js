@@ -10,10 +10,9 @@ const transporter = nodemailer.createTransport({
 });
 
 export const Email = async (email, subject, message) => {
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
     const mailOptions = {
-        from: `"sMv_Blog" ${process.env.MAIL}`,
+        from: `sMv_Blog ${process.env.MAIL}`,
         to: email,
         subject: subject,
         html: message,

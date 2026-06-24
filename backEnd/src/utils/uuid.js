@@ -6,7 +6,8 @@ import crypto from 'crypto';
  * @param {string} [extraSeed=''] - Optional ID or timestamp to ensure 100% uniqueness.
  */
 
-function generateUsername(fullName, extraSeed = '') {
+function generateUsername(fullName) {
+    const extraSeed = Date.now().toString();
     // 1. Clean the name: lowercase, remove accents, remove non-alphanumeric characters
     const cleanName = fullName
         .toLowerCase()

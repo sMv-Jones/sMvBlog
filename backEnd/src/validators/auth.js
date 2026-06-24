@@ -41,35 +41,40 @@ export const emailValidation = [
         .isEmail().withMessage("Please present a valid email configuration"),
 ];
 
+
 export const updateProfileValidator = [
-    body('displayName')
-        .notEmpty().withMessage('Display name is required')
-        .isLength({ min: 2, max: 50 }).withMessage('Display name must be between 2 and 50 characters')
-        .trim(),
-
-    body('username')
-        .notEmpty().withMessage('Username is required')
-        .isLength({ min: 3, max: 30 }).withMessage('Username must be between 3 and 30 characters')
-        .matches(/^[a-zA-Z0-9_]+$/).withMessage('Username can only contain alphanumeric characters and underscores')
-        .trim(),
-
-    body('email')
-        .notEmpty().withMessage('Email address connection is required')
-        .isEmail().withMessage('Invalid email connection format')
-        .normalizeEmail() // Sanitizes email format (lowercase, drops dots where applicable, etc.)
-        .trim(),
-
+    // 1. Validate Bio
     body('bio')
-        .optional({ checkFalsy: true }) // Allows blank fields without throwing validation exceptions
-        .isLength({ max: 300 }).withMessage('Biographical ledger cannot exceed 300 characters')
-        .trim(),
-
-    body(['github', 'linkedin'])
         .optional({ checkFalsy: true })
-        .isURL().withMessage('Invalid social architecture matrix URL format')
         .trim()
-];
+        .isLength({ max: 300 }).withMessage('Bio cannot exceed 300 characters'),
 
+    // 2. Validate Nested GitHub Link
+    body('socialLinks.github')
+        .optional({ checkFalsy: true }) // Doesn't fail if left blank
+        .trim()
+        .isURL().withMessage('GitHub link must be a valid URL structure')
+        .custom((value) => {
+            const isGithub = /^(https?:\/\/)?(www\.)?github\.com/i.test(value);
+            if (!isGithub) {
+                throw new Error('Must be a valid GitHub profile link');
+            }
+            return true;
+        }),
+
+    // 3. Validate Nested LinkedIn Link
+    body('socialLinks.linkedin')
+        .optional({ checkFalsy: true }) // Doesn't fail if left blank
+        .trim()
+        .isURL().withMessage('LinkedIn link must be a valid URL structure')
+        .custom((value) => {
+            const isLinkedin = /^(https?:\/\/)?(www\.)?linkedin\.com/i.test(value);
+            if (!isLinkedin) {
+                throw new Error('Must be a valid LinkedIn profile link');
+            }
+            return true;
+        })
+];
 export const changePasswordValidator = [
     body('currentPassword')
         .notEmpty().withMessage('Current validation password is required'),
@@ -83,24 +88,9 @@ export const changePasswordValidator = [
 ];
 
 
-export const validateSocialUrl = [
-    body('url')
-        .trim()
-        .notEmpty().withMessage('URL is required')
-        .isURL().withMessage('Must be a valid URL structure')
-        .custom((value) => {
-            const isLinkedin = /^(https?:\/\/)?(www\.)?linkedin\.com/i.test(value);
-            const isGithub = /^(https?:\/\/)?(www\.)?github\.com/i.test(value);
-
-            if (!isLinkedin && !isGithub) {
-                throw new Error('URL must be either a valid GitHub or LinkedIn link');
-            }
-            return true;
-        })
-];
 
 export const verifyOtpValidation = [
-  body('otp')
-    .matches(/^\d{6}$/)
-    .withMessage('OTP must be a 6-digit number'),
+    body('otp')
+        .matches(/^\d{6}$/)
+        .withMessage('OTP must be a 6-digit number'),
 ];

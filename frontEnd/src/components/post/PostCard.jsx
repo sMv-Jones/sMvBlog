@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 
-function PostCard({ title, featuredImage, slug, updatedAt, content, userName, displayName }) {
+// Added `className` prop with an empty default string
+function PostCard({ title, featuredImage, slug, updatedAt, content, userName, displayName, className = "" }) {
   const cleanSnippet = content
     ? content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
     : ''
@@ -13,26 +14,28 @@ function PostCard({ title, featuredImage, slug, updatedAt, content, userName, di
       })
     : ''
 
+  // Checks if a custom height/flex system was passed from the parent. 
+  // If not, we apply the default vertical flow layout classes.
+  const hasCustomLayout = className.includes('h-') || className.includes('flex');
+  
   return (
-    <Link to={`/post/${slug}`} className="block w-full group">
+    <Link to={`/post/${slug}`} className={`block w-full group ${className}`}>
       <article
-        className="
+        className={`
           w-full
           rounded-2xl
           overflow-hidden
-
           border border-white/10
-
           bg-black/60 backdrop-blur-xl
-
           shadow-[0_0_18px_rgba(255,255,255,0.08)]
           hover:shadow-[0_0_30px_rgba(255,255,255,0.16)]
-
           transition-all duration-300
-        "
+          ${hasCustomLayout ? 'h-full flex flex-col' : ''}
+        `}
       >
-        {/* IMAGE */}
-        <div className="w-full h-[180px] sm:h-[200px] overflow-hidden">
+        {/* IMAGE AREA */}
+        {/* If custom layout is active, image box takes a percentage height, else uses your original static responsive heights */}
+        <div className={`w-full overflow-hidden ${hasCustomLayout ? 'h-[45%]' : 'h-[180px] sm:h-[200px]'}`}>
           <img
             src={featuredImage}
             alt={title}
@@ -44,33 +47,36 @@ function PostCard({ title, featuredImage, slug, updatedAt, content, userName, di
           />
         </div>
 
-        {/* CONTENT */}
-        <div className="p-4 sm:p-5">
-          {formattedDate && (
-            <time className="text-[11px] text-white/40 tracking-widest uppercase">
-              {formattedDate}
-            </time>
-          )}
+        {/* CONTENT AREA */}
+        {/* If custom layout is active, flex-1 forces the content area to claim all remaining card space nicely */}
+        <div className={`p-4 sm:p-5 ${hasCustomLayout ? 'flex-1 flex flex-col justify-between' : ''}`}>
+          <div>
+            {formattedDate && (
+              <time className="text-[11px] text-white/40 tracking-widest uppercase">
+                {formattedDate}
+              </time>
+            )}
 
-          <h2 className="
-            mt-2
-            text-base sm:text-lg md:text-xl
-            font-semibold text-white
-            line-clamp-2
-            group-hover:text-blue-300
-          ">
-            {title}
-          </h2>
-
-          {cleanSnippet && (
-            <p className="
+            <h2 className="
               mt-2
-              text-sm text-white/60
+              text-base sm:text-lg md:text-xl
+              font-semibold text-white
               line-clamp-2
+              group-hover:text-blue-300
             ">
-              {cleanSnippet}
-            </p>
-          )}
+              {title}
+            </h2>
+
+            {cleanSnippet && (
+              <p className="
+                mt-2
+                text-sm text-white/60
+                line-clamp-2
+              ">
+                {cleanSnippet}
+              </p>
+            )}
+          </div>
 
           {/* AUTHOR SECTION */}
           {displayName && (
