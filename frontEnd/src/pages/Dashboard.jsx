@@ -1,50 +1,66 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import authService from "../services/auth";
 import { Container, DeleteConfirmationModal, Button, Input } from "../components/index";
+
+// Imported your exact action creator from your authSlice file
+import { logout } from "../store/authSlice"; // <-- Adjust this path to match your folder structure
 
 export default function Dashboard() {
     // Core user properties sourced from global Redux context
     const userName = useSelector((state) => state.auth?.userName);
     const email = useSelector((state) => state.auth?.userEmail);
     const userDisplayName = useSelector((state) => state.auth?.userDisplayName);
-    
+
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     const [userData, setUserData] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
-    
+
     // States for password modification with OTP sequence
     const [isChangingPassword, setIsChangingPassword] = useState(false);
     const [passwordOtpSent, setPasswordOtpSent] = useState(false);
     const [passwordOtpLoading, setPasswordOtpLoading] = useState(false);
+    const [passwordMessage, setPasswordMessage] = useState({ text: "", isError: false });
 
     // States for account deletion with OTP sequence
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [deleteOtpSent, setDeleteOtpSent] = useState(false);
     const [deleteOtpLoading, setDeleteOtpLoading] = useState(false);
-    const [deleteOtpValue, setDeleteOtpValue] = useState("");
-    
+    const [deleteMessage, setDeleteMessage] = useState({ text: "", isError: false });
+
+    // Refs for individual multi-box inputs
+    const passwordOtpRefs = useRef([]);
+    const deleteOtpRefs = useRef([]);
+
     // Local memory tracking file upload image preview streams
     const [photoPreview, setPhotoPreview] = useState(null);
 
-    // Form setup targeting profile data
-    const { 
-        register: registerProfile, 
-        handleSubmit: handleProfileSubmit, 
+    // Form setups via react-hook-form
+    const {
+        register: registerProfile,
+        handleSubmit: handleProfileSubmit,
         reset: resetProfile,
-        formState: { errors: profileErrors } 
+        formState: { errors: profileErrors }
     } = useForm();
 
-    // Form setup targeting password configuration
-    const { 
-        register: registerPassword, 
-        handleSubmit: handlePasswordSubmit, 
+    const {
+        register: registerPassword,
+        handleSubmit: handlePasswordSubmit,
         reset: resetPassword,
+        setValue: setPasswordFormValue,
         getValues: getPasswordValues,
-        formState: { errors: passwordErrors } 
+        formState: { errors: passwordErrors }
+    } = useForm();
+
+    const {
+        register: registerDelete,
+        handleSubmit: handleDeleteSubmit,
+        reset: resetDelete,
+        setValue: setDeleteFormValue,
     } = useForm();
 
     // Pull database profile configuration values on initialization
@@ -53,7 +69,7 @@ export default function Dashboard() {
             if (!userName) return;
             try {
                 const data = await authService.getProfile(userName);
-                
+
                 if (data?.success && data?.profile) {
                     setUserData(data.profile);
                     resetProfile({
@@ -82,11 +98,46 @@ export default function Dashboard() {
         loadProfileData();
     }, [userName, resetProfile, userDisplayName]);
 
+    // Handle Input Navigation for Split Boxes
+    const handleOtpChange = (e, index, refs, formKey, setValue) => {
+        const val = e.target.value.replace(/\D/g, "");
+        setValue(`${formKey}.${index}`, val);
+
+        if (val && index < 5) {
+            refs.current[index + 1]?.focus();
+        }
+    };
+
+    const handleOtpKeyDown = (e, index, refs, formKey, setValue) => {
+        if (e.key === "Backspace") {
+            const currentVal = e.target.value;
+            if (!currentVal && index > 0) {
+                setValue(`${formKey}.${index - 1}`, "");
+                refs.current[index - 1]?.focus();
+            }
+        }
+    };
+
+    const handleOtpPaste = (e, refs, formKey, setValue) => {
+        e.preventDefault();
+        const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+
+        pastedData.split("").forEach((char, index) => {
+            setValue(`${formKey}.${index}`, char);
+            if (refs.current[index]) {
+                refs.current[index].value = char;
+            }
+        });
+
+        const focusIndex = pastedData.length < 6 ? pastedData.length : 5;
+        refs.current[focusIndex]?.focus();
+    };
+
     const onProfileSubmit = async (data) => {
         try {
             const formData = new FormData();
             formData.append("bio", data.bio || "");
-            
+
             if (data.socialLinks) {
                 Object.keys(data.socialLinks).forEach(platform => {
                     formData.append(`socialLinks[${platform}]`, data.socialLinks[platform] || "");
@@ -98,7 +149,7 @@ export default function Dashboard() {
             }
 
             const response = await authService.updateProfile(formData);
-            
+
             if (response?.success && response?.profile) {
                 setUserData(response.profile);
                 resetProfile({
@@ -107,13 +158,9 @@ export default function Dashboard() {
                 });
                 setPhotoPreview(null);
                 setIsEditing(false);
-                alert("Profile updated successfully!");
-            } else {
-                alert("Looks like something went wrong on the server. Please try again.");
             }
         } catch (err) {
             console.error(err);
-            alert("We ran into an error saving your changes.");
         }
     };
 
@@ -128,85 +175,109 @@ export default function Dashboard() {
         setIsEditing(false);
     };
 
-    // Step 1: Trigger password adjustment OTP request
+    // Password Step 1: Request OTP
     const requestPasswordOtp = async () => {
         setPasswordOtpLoading(true);
+        setPasswordMessage({ text: "", isError: false });
         try {
             const response = await authService.sendPasswordOtp();
             if (response?.success) {
                 setPasswordOtpSent(true);
-                alert(`Security validation code sent to ${email}`);
+                setPasswordMessage({ text: `Verification token successfully sent to ${email}`, isError: false });
             } else {
-                alert(response?.message || "Could not dispatch verification code.");
+                setPasswordMessage({ text: response?.message || "Could not dispatch verification code.", isError: true });
             }
         } catch (err) {
             console.error("OTP send failure:", err);
-            alert("Network error while generating security handshake context.");
+            setPasswordMessage({ text: "Network error while generating security framework.", isError: true });
         } finally {
             setPasswordOtpLoading(false);
         }
     };
 
-    // Step 2: Finalize password change with OTP
+    // Password Step 2: Finalize changes
     const onPasswordSubmit = async (data) => {
+        setPasswordMessage({ text: "", isError: false });
+        const rawOtp = Object.values(data.passwordOtp || {}).join("");
+
+        if (rawOtp.length !== 6) {
+            setPasswordMessage({ text: "Please complete the 6-digit verification security block.", isError: true });
+            return;
+        }
+
         try {
             const response = await authService.changePassword({
                 currentPassword: data.currentPassword,
                 newPassword: data.newPassword,
-                otp: data.passwordOtp
+                otp: rawOtp
             });
             if (response?.success) {
-                alert("Password changed successfully!");
+                setPasswordMessage({ text: "Password changed successfully!", isError: false });
                 resetPassword();
-                setIsChangingPassword(false);
-                setPasswordOtpSent(false);
+                setTimeout(() => {
+                    setIsChangingPassword(false);
+                    setPasswordOtpSent(false);
+                    setPasswordMessage({ text: "", isError: false });
+                }, 2000);
             } else {
-                alert(response?.message || "Current password or verification code didn't match.");
+                setPasswordMessage({ text: response?.message || "Current password or verification code didn't match.", isError: true });
             }
         } catch (err) {
             console.error(err);
-            alert("Could not update password at this time.");
+            setPasswordMessage({ text: "Could not update password context properties at this time.", isError: true });
         }
     };
 
-    // Step 1: Open modal and dispatch delete confirmation OTP
+    // Deletion Step 1: Open Context Sequence UI Modal
     const openDeleteFlow = async () => {
         setIsDeleteModalOpen(true);
         setDeleteOtpLoading(true);
+        setDeleteMessage({ text: "", isError: false });
         try {
             const response = await authService.sendDeleteAccountOtp();
             if (response?.success) {
                 setDeleteOtpSent(true);
             } else {
-                alert(response?.message || "Unable to dispatch confirmation token.");
-                setIsDeleteModalOpen(false);
+                setDeleteMessage({ text: response?.message || "Unable to dispatch confirmation token.", isError: true });
             }
         } catch (err) {
             console.error("Account termination OTP handshake failed:", err);
-            alert("Security challenge routing malfunctioned.");
-            setIsDeleteModalOpen(false);
+            setDeleteMessage({ text: "Security process routing verification malfunctioned.", isError: true });
         } finally {
             setDeleteOtpLoading(false);
         }
     };
 
-    // Step 2: Conclude account destruction process with verification code
-    const handleConfirmDelete = async () => {
-        if (!deleteOtpValue.trim()) {
-            alert("Please input the verification code sent to your account email context.");
+    // Deletion Step 2: Perform permanent system data cleanup, state reset & navigation
+    const onDeleteSubmit = async (data) => {
+        setDeleteMessage({ text: "", isError: false });
+        const rawOtp = Object.values(data.deleteOtp || {}).join("");
+
+        if (rawOtp.length !== 6) {
+            setDeleteMessage({ text: "Please input the full 6-digit code sequence.", isError: true });
             return;
         }
+
         try {
-            const response = await authService.deleteAccount({ otp: deleteOtpValue });
+            const response = await authService.deleteAccount({ otp: rawOtp });
             if (response?.success) {
                 setIsDeleteModalOpen(false);
-                navigate("/login");
+
+                // 1. Clean global Redux memory safely using your slice action
+                dispatch(logout());
+
+                // 2. Wipe explicit browser storage tokens
+                localStorage.clear();
+                sessionStorage.clear();
+
+                // 3. Route cleanly back to public login gate and wipe navigation stack history
+                navigate("/login", { replace: true });
             } else {
-                alert(response?.message || "Invalid verification code sequence. Operation aborted.");
+                setDeleteMessage({ text: response?.message || "Invalid code sequence. Operation aborted.", isError: true });
             }
         } catch (err) {
             console.error("Account deletion execution failure:", err);
-            alert("Could not complete account destruction routine.");
+            setDeleteMessage({ text: "Could not complete destruction routine safely.", isError: true });
         }
     };
 
@@ -222,13 +293,13 @@ export default function Dashboard() {
         <div className="min-h-screen py-12 px-4 md:px-8 text-white">
             <Container>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                    
+
                     {/* LEFT COLUMN: LIVE PROFILE SYNC VIEW */}
                     <aside className="lg:col-span-1 rounded-3xl border border-white/10 bg-black/60 p-6 text-center lg:sticky lg:top-10 shadow-xl backdrop-blur-md">
                         <div className="relative w-40 h-40 mx-auto mb-5">
-                            <img 
-                                src={ photoPreview || userData.profilePhoto || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80" } 
-                                alt="Profile Avatar" 
+                            <img
+                                src={photoPreview || userData.profilePhoto || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80"}
+                                alt="Profile Avatar"
                                 className="w-full h-full object-cover rounded-full border border-white/10 p-1 bg-neutral-900"
                             />
                             {photoPreview && (
@@ -243,7 +314,7 @@ export default function Dashboard() {
                         </h1>
                         <p className="text-blue-400 text-base font-semibold mb-1">@{userName}</p>
                         <p className="text-white/40 text-sm font-mono mb-4">{email}</p>
-                        
+
                         <p className="text-sm text-white/50 mb-5">
                             Member since: <span className="text-white/80 font-medium">{userData.date ? new Date(userData.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "Recently"}</span>
                         </p>
@@ -261,10 +332,10 @@ export default function Dashboard() {
 
                         <div className="flex flex-wrap justify-center gap-2">
                             {['github', 'linkedin'].map((platform) => userData.socialLinks?.[platform] && (
-                                <a 
+                                <a
                                     key={platform}
-                                    href={userData.socialLinks[platform]} 
-                                    target="_blank" 
+                                    href={userData.socialLinks[platform]}
+                                    target="_blank"
                                     rel="noreferrer"
                                     className="px-4 py-2 text-sm font-semibold rounded-xl bg-neutral-950 border border-white/10 text-white/70 hover:border-blue-500/50 hover:text-blue-400 transition-all duration-200 capitalize"
                                 >
@@ -274,9 +345,9 @@ export default function Dashboard() {
                         </div>
                     </aside>
 
-                    {/* RIGHT COLUMN: INTERACTIVE MUTATION CONSOLE */}
+                    {/* RIGHT COLUMN: INTERACTIVE PROFILE AND SETTINGS MANAGEMENT */}
                     <main className="lg:col-span-2 space-y-6">
-                        
+
                         {/* PROFILE EDIT CONTAINER */}
                         <section className="rounded-3xl border border-white/10 bg-black/60 p-6 md:p-8 shadow-xl backdrop-blur-md">
                             <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
@@ -292,15 +363,14 @@ export default function Dashboard() {
                             </div>
 
                             <form onSubmit={handleProfileSubmit(onProfileSubmit)} className="space-y-5" encType="multipart/form-data">
-                                
                                 {/* Image Uploader */}
                                 {isEditing && (
                                     <div className="bg-neutral-950/40 border border-dashed border-white/10 rounded-2xl p-4 transition-all duration-200">
                                         <label className="block text-sm font-bold text-blue-400 uppercase tracking-widest mb-2">
                                             Upload Profile Picture
                                         </label>
-                                        <input 
-                                            type="file" 
+                                        <input
+                                            type="file"
                                             accept="image/*"
                                             {...registerProfile("profilePhotoFile", {
                                                 onChange: (e) => {
@@ -322,7 +392,7 @@ export default function Dashboard() {
                                 {/* Bio Input */}
                                 <div>
                                     <label className="block text-sm font-bold text-white/50 uppercase tracking-widest mb-2">Bio</label>
-                                    <textarea 
+                                    <textarea
                                         rows="4"
                                         disabled={!isEditing}
                                         {...registerProfile("bio", { maxLength: { value: 300, message: "Keep it under 300 characters!" } })}
@@ -334,12 +404,12 @@ export default function Dashboard() {
 
                                 <div className="h-px bg-white/5 my-4"></div>
 
-                                {/* Social Links mapping custom Input */}
+                                {/* Social Links handles */}
                                 <div className="space-y-4">
                                     <h3 className="text-sm font-bold text-white/30 uppercase tracking-widest">Social Links</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {['github', 'linkedin'].map((platform) => (
-                                            <Input 
+                                            <Input
                                                 key={platform}
                                                 label={platform.charAt(0).toUpperCase() + platform.slice(1)}
                                                 disabled={!isEditing}
@@ -354,8 +424,8 @@ export default function Dashboard() {
 
                                 {isEditing && (
                                     <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/5">
-                                        <button 
-                                            type="button" 
+                                        <button
+                                            type="button"
                                             onClick={handleProfileCancel}
                                             className="px-5 py-2 text-sm font-bold text-white/50 hover:text-white transition-colors duration-200"
                                         >
@@ -375,14 +445,14 @@ export default function Dashboard() {
                                 <h2 className="text-xl font-black tracking-tight text-white">Account Settings</h2>
                                 <p className="text-sm text-white/50 mt-0.5">Manage your secret access credentials and account state.</p>
                             </div>
-                            
+
                             {!isChangingPassword ? (
                                 <div className="flex flex-wrap gap-3 items-center pt-2">
                                     <Button onClick={() => setIsChangingPassword(true)} className="text-sm py-2 px-5 font-semibold">
                                         Change Password
                                     </Button>
 
-                                    <Button 
+                                    <Button
                                         onClick={openDeleteFlow}
                                         bgColor="bg-red-950/20 hover:bg-red-950/40"
                                         textColor="text-red-400 hover:text-red-300"
@@ -395,18 +465,13 @@ export default function Dashboard() {
                                 <form onSubmit={handlePasswordSubmit(onPasswordSubmit)} className="space-y-4 border-t border-white/5 pt-4">
                                     <div className="flex justify-between items-center mb-2">
                                         <h3 className="text-sm font-bold text-blue-400 uppercase tracking-widest">Update Password</h3>
-                                        {passwordOtpSent && (
-                                            <span className="text-xs font-mono text-emerald-400 bg-emerald-950/30 px-3 py-1 rounded-full border border-emerald-500/20">
-                                                Verification Token Dispatched
-                                            </span>
-                                        )}
                                     </div>
-                                    
+
                                     <div className="max-w-md">
-                                        <Input 
+                                        <Input
                                             label="Current Password"
                                             type="password"
-                                            disabled={passwordOtpSent}
+                                            disabled={passwordOtpSent && !passwordMessage.isError}
                                             className="!bg-neutral-950/60 !text-white !border-white/10 focus:!bg-neutral-900 focus:!border-blue-500/50 text-base rounded-xl px-4 py-3 disabled:opacity-40"
                                             {...registerPassword("currentPassword", { required: "Please enter your current password" })}
                                         />
@@ -415,12 +480,12 @@ export default function Dashboard() {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
                                         <div>
-                                            <Input 
+                                            <Input
                                                 label="New Password"
                                                 type="password"
-                                                disabled={passwordOtpSent}
+                                                disabled={passwordOtpSent && !passwordMessage.isError}
                                                 className="!bg-neutral-950/60 !text-white !border-white/10 focus:!bg-neutral-900 focus:!border-blue-500/50 text-base rounded-xl px-4 py-3 disabled:opacity-40"
-                                                {...registerPassword("newPassword", { 
+                                                {...registerPassword("newPassword", {
                                                     required: "Please choose a new password",
                                                     minLength: { value: 8, message: "Must be at least 8 characters long" },
                                                     validate: {
@@ -434,12 +499,12 @@ export default function Dashboard() {
                                         </div>
 
                                         <div>
-                                            <Input 
+                                            <Input
                                                 label="Confirm New Password"
                                                 type="password"
-                                                disabled={passwordOtpSent}
+                                                disabled={passwordOtpSent && !passwordMessage.isError}
                                                 className="!bg-neutral-950/60 !text-white !border-white/10 focus:!bg-neutral-900 focus:!border-blue-500/50 text-base rounded-xl px-4 py-3 disabled:opacity-40"
-                                                {...registerPassword("confirmPassword", { 
+                                                {...registerPassword("confirmPassword", {
                                                     required: "Please re-type your new password",
                                                     validate: (value) => value === getPasswordValues("newPassword") || "Passwords don't match"
                                                 })}
@@ -448,41 +513,59 @@ export default function Dashboard() {
                                         </div>
                                     </div>
 
-                                    {/* Inline Conditional Verification Frame */}
+                                    {/* Inline Feedback Banner */}
+                                    {passwordMessage.text && (
+                                        <div className={`text-sm p-3 rounded-xl border font-medium ${passwordMessage.isError ? "bg-red-950/30 text-red-400 border-red-500/20" : "bg-emerald-950/30 text-emerald-400 border-emerald-500/20"}`}>
+                                            {passwordMessage.text}
+                                        </div>
+                                    )}
+
+                                    {/* Split OTP validation boxes */}
                                     {passwordOtpSent && (
-                                        <div className="max-w-xs animate-fadeIn pt-2">
-                                            <Input 
-                                                label="Security Verification Code (OTP)"
-                                                type="text"
-                                                placeholder="X-X-X-X-X-X"
-                                                maxLength={6}
-                                                className="!bg-neutral-950/60 !text-white !border-blue-500/30 text-center text-lg font-mono tracking-widest rounded-xl px-4 py-3"
-                                                {...registerPassword("passwordOtp", { 
-                                                    required: "Enter security key verification digits to authenticate",
-                                                    minLength: { value: 6, message: "OTP must contain 6 digits" }
-                                                })}
-                                            />
-                                            {passwordErrors.passwordOtp && <p className="text-red-400 text-sm mt-1.5 font-medium">{passwordErrors.passwordOtp.message}</p>}
+                                        <div className="pt-2 animate-fadeIn max-w-sm">
+                                            <label className="block text-sm font-bold text-white/50 uppercase tracking-widest mb-3">
+                                                Verification Security Code
+                                            </label>
+                                            <div
+                                                className="flex gap-2"
+                                                onPaste={(e) => handleOtpPaste(e, passwordOtpRefs, "passwordOtp", setPasswordFormValue)}
+                                            >
+                                                {Array(6).fill(null).map((_, index) => (
+                                                    <input
+                                                        key={index}
+                                                        type="text"
+                                                        maxLength={1}
+                                                        pattern="\d*"
+                                                        inputMode="numeric"
+                                                        {...registerPassword(`passwordOtp.${index}`, { required: true })}
+                                                        ref={(el) => (passwordOtpRefs.current[index] = el)}
+                                                        onChange={(e) => handleOtpChange(e, index, passwordOtpRefs, "passwordOtp", setPasswordFormValue)}
+                                                        onKeyDown={(e) => handleOtpKeyDown(e, index, passwordOtpRefs, "passwordOtp", setPasswordFormValue)}
+                                                        className="w-12 h-14 bg-neutral-950/60 text-white border border-white/10 focus:border-blue-500 text-center text-xl font-bold font-mono rounded-xl focus:outline-none transition-all"
+                                                    />
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
 
                                     <div className="flex items-center gap-3 pt-4 border-t border-white/5">
-                                        <button 
+                                        <button
                                             type="button"
                                             onClick={() => {
                                                 setIsChangingPassword(false);
                                                 setPasswordOtpSent(false);
+                                                setPasswordMessage({ text: "", isError: false });
                                                 resetPassword();
                                             }}
                                             className="px-5 py-2 text-sm font-bold text-white/50 hover:text-white transition-colors duration-200"
                                         >
                                             Cancel
                                         </button>
-                                        
+
                                         {!passwordOtpSent ? (
-                                            <Button 
-                                                type="button" 
-                                                onClick={requestPasswordOtp} 
+                                            <Button
+                                                type="button"
+                                                onClick={requestPasswordOtp}
                                                 disabled={passwordOtpLoading}
                                                 className="text-sm py-2 px-5 font-semibold"
                                             >
@@ -503,36 +586,57 @@ export default function Dashboard() {
                 </div>
             </Container>
 
-            {/* INTEGRATED DELETE CONFIRMATION MODAL COMPONENTS OVERLAY WITH INLINE OTP ENTRY */}
-            <DeleteConfirmationModal 
+            {/* INTEGRATED DELETE CONFIRMATION MODAL WITH SPLIT OTP ENTRY */}
+            <DeleteConfirmationModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => {
                     setIsDeleteModalOpen(false);
                     setDeleteOtpSent(false);
-                    setDeleteOtpValue("");
+                    setDeleteMessage({ text: "", isError: false });
+                    resetDelete();
                 }}
-                onConfirm={handleConfirmDelete}
+                onConfirm={handleDeleteSubmit(onDeleteSubmit)}
                 title="Permanently Delete Account?"
                 message={
-                    deleteOtpLoading 
-                    ? "Generating security signature and sending validation token..." 
-                    : "This will completely remove your personal database entries, including profile pictures, articles, and configuration details. This cannot be undone."
+                    deleteOtpLoading
+                        ? "Generating security signature and sending validation token..."
+                        : "This will completely remove your personal database entries, including profile pictures, articles, and configuration details. This cannot be undone."
                 }
             >
+                {/* Modal Inline Error Output */}
+                {deleteMessage.text && (
+                    <div className="mt-4 text-sm p-3 rounded-xl bg-red-950/30 text-red-400 border border-red-500/20 text-left font-medium">
+                        {deleteMessage.text}
+                    </div>
+                )}
+
                 {deleteOtpSent && (
-                    <div className="mt-5 space-y-3 border-t border-white/10 pt-4 text-left">
+                    <div className="mt-5 space-y-4 border-t border-white/10 pt-4 text-left">
                         <label className="block text-xs font-bold text-red-400 uppercase tracking-widest">
                             Enter Security OTP Sent To Your Email
                         </label>
-                        <input 
-                            type="text"
-                            value={deleteOtpValue}
-                            maxLength={6}
-                            onChange={(e) => setDeleteOtpValue(e.target.value.replace(/\D/g, ""))}
-                            placeholder="6-digit code"
-                            className="w-full bg-neutral-950/80 border border-red-500/20 text-white rounded-xl px-4 py-3 text-center text-lg font-mono tracking-widest focus:outline-none focus:border-red-500/50 transition-all"
-                        />
-                        <p className="text-xs text-white/40">
+
+                        <div
+                            className="flex justify-center gap-2"
+                            onPaste={(e) => handleOtpPaste(e, deleteOtpRefs, "deleteOtp", setDeleteFormValue)}
+                        >
+                            {Array(6).fill(null).map((_, index) => (
+                                <input
+                                    key={index}
+                                    type="text"
+                                    maxLength={1}
+                                    pattern="\d*"
+                                    inputMode="numeric"
+                                    {...registerDelete(`deleteOtp.${index}`, { required: true })}
+                                    ref={(el) => (deleteOtpRefs.current[index] = el)}
+                                    onChange={(e) => handleOtpChange(e, index, deleteOtpRefs, "deleteOtp", setDeleteFormValue)}
+                                    onKeyDown={(e) => handleOtpKeyDown(e, index, deleteOtpRefs, "deleteOtp", setDeleteFormValue)}
+                                    className="w-12 h-14 bg-neutral-950/80 border border-red-500/20 text-white text-center text-xl font-bold font-mono rounded-xl focus:outline-none focus:border-red-500 transition-all"
+                                />
+                            ))}
+                        </div>
+
+                        <p className="text-xs text-white/40 text-center">
                             Account destruction parameters require immediate authorization keys before final system wipes.
                         </p>
                     </div>

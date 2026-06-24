@@ -122,6 +122,35 @@ export class AuthService {
             return this.#handleError(error, "Connection error during deletion.");
         }
     }
+    // --- FORGOT PASSWORD WORKFLOW METHODS ---
+
+    /**
+     * Step 1: Dispatches an OTP verification request to the backend for an unauthenticated user
+     */
+    async requestPasswordResetOtp(email) {
+        try {
+            const response = await API.post('/auth/forgot-password', { email });
+            return response.data;
+        } catch (error) {
+            console.error("Auth Service :: requestPasswordResetOtp :: error", error);
+            return this.#handleError(error, "Failed to send verification code");
+        }
+    }
+
+    /**
+     * Step 2: Submits the user-provided security OTP code along with their new password payload
+     */
+    async resetPasswordWithOtp({ email, otp, newPassword }) {
+        try {
+            const response = await API.post('/auth/reset-password', { email, otp, newPassword });
+            return response.data;
+        } catch (error) {
+            console.error("Auth Service :: resetPasswordWithOtp :: error", error);
+            return this.#handleError(error, "Password reset failed");
+        }
+    }
+
+    // ----------------------------------------
 }
 
 const authService = new AuthService();

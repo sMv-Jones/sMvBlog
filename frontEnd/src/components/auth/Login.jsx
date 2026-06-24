@@ -65,14 +65,27 @@ function Login() {
                                 }
                             })}
                         />
-                        <Input
-                            label="Password: "
-                            type="password"
-                            placeholder="Enter your password"
-                            {...register("password", {
-                                required: true,
-                            })}
-                        />
+                        <div>
+                            <Input
+                                label="Password: "
+                                type="password"
+                                placeholder="Enter your password"
+                                {...register("password", {
+                                    required: true,
+                                })}
+                            />
+                            
+                            {/* Forgot Password Link Container */}
+                            <div className="flex justify-end mt-2.5 px-0.5">
+                                <button
+                                    type="button"
+                                    onClick={() => navigate("/forgot-password")}
+                                    className="text-xs font-semibold text-primary/80 hover:text-primary hover:underline transition-all duration-200 ease-out transform hover:scale-[1.02] focus:outline-none"
+                                >
+                                    Forgot Password?
+                                </button>
+                            </div>
+                        </div>
                         <Button type="submit" className="w-full">Sign in</Button>
                     </div>
                 </form>

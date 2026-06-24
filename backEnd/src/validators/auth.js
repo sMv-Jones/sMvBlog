@@ -108,3 +108,33 @@ export const verifyOtpValidation = [
         .matches(/^\d{6}$/)
         .withMessage('OTP must be a 6-digit number'),
 ];
+
+export const forgotPasswordValidator = [
+    body('email')
+        .trim()
+        .notEmpty().withMessage('Email address is required.')
+        .isEmail().withMessage('Please provide a valid email structure.')
+        .normalizeEmail(),
+];
+
+export const resetPasswordValidator = [
+    body('email')
+        .trim()
+        .notEmpty().withMessage('Email address context identifier missing.')
+        .isEmail().withMessage('Invalid email routing metadata.'),
+    
+    body('otp')
+        .trim()
+        .notEmpty().withMessage('Verification code is required.')
+        .isLength({ min: 6, max: 6 }).withMessage('Security OTP code must be exactly 6 digits.')
+        .isNumeric().withMessage('Security OTP must contain only numeric digits.'),
+        
+    body('newPassword')
+        .trim()
+        .notEmpty().withMessage('Please enter your new password.')
+        .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long.')
+        // Matches the frontend react-hook-form schema validations
+        .matches(/[A-Z]/).withMessage('Password requires at least one uppercase letter.')
+        .matches(/[a-z]/).withMessage('Password requires at least one lowercase letter.')
+        .matches(/[0-9]/).withMessage('Password requires at least one numeric value.'),
+];

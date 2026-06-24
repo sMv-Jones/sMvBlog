@@ -552,7 +552,7 @@ export const updateProfile = async (req, res, next) => {
 
     }
 
-}; 
+};
 
 export const sendPasswordOtp = async (req, res, next) => {
     try {
@@ -700,17 +700,107 @@ export const deleteAccount = async (req, res, next) => {
         }
 
         // Atomic data expunging routine
-        await Profile.deleteOne({ userName });
         await User.deleteOne({ _id: user._id });
         await OTP.deleteOne({ _id: otpRecord._id });
 
         // Terminate cookie context variables natively 
-        res.clearCookie("token", { 
-            httpOnly: true, 
-            secure: true, 
-            sameSite: "None" 
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: true,
+            sameSite: "None"
         });
 
         res.status(200).json({ success: true, message: "Account context safely expunged from database." });
     } catch (error) { next(error); }
+};
+
+export const requestPasswordResetOtp = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            res.status(400);
+            throw new Error("Email address is required.");
+        }
+
+        // 🔍 Verify the account exists prior to dropping codes
+        const user = await User.findOne({ email });
+        if (!user) {
+            res.status(404);
+            throw new Error("No account found with this email address.");
+        }
+
+        const otp = crypto.randomInt(100000, 1000000).toString();
+
+        // Expunge old records and save the validation context securely
+        const normalizedEmail = email.trim().toLowerCase();
+        await OTP.deleteMany({ email: normalizedEmail });
+        await OTP.create({
+            email: normalizedEmail,
+            otp,
+            data: {}
+        });
+
+        // Dispatch verification notification template payload
+        await emailSender(
+            user.email,
+            "Reset Your Account Password",
+            otpTemplate(
+                "Reset Your Password",
+                "We received a request to reset your sMv|Blog account password. Use the verification code below to authorize this update.",
+                otp
+            )
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Recovery verification code dispatched to your inbox."
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * 6. RESET PASSWORD WITH OTP (FORGOT PASSWORD STEP 2)
+ * Validates the verification code matching the email and overwrites the password schema properties.
+ */
+export const resetPasswordWithOtp = async (req, res, next) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        console.log(otp);
+        if (!email || !otp || !newPassword) {
+            res.status(400);
+            throw new Error("Missing structural payload fields (email, otp, and newPassword are required).");
+        }
+
+        // 🔍 Locate the matching verification data trace
+        const normalizedEmail = email.trim().toLowerCase();
+        const otpRecord = await OTP.findOne({ email: normalizedEmail });
+        if (!otpRecord || otpRecord.otp !== String(otp)) {
+            res.status(400);
+            throw new Error("Invalid or expired operational security token.");
+        }
+
+        // Locate target user configuration space
+        const user = await User.findOne({ email });
+        if (!user) {
+            res.status(404);
+            throw new Error("Target user profile documentation not found.");
+        }
+
+        // Set the new password text string directly
+        // Your model's pre-save middleware (`userSchema.pre('save')`) will catch and hash this automatically!
+        user.password = newPassword;
+        await user.save();
+
+        // Clear verification code memory traces
+        await OTP.deleteOne({ _id: otpRecord._id });
+
+        res.status(200).json({
+            success: true,
+            message: "Password overwritten successfully. Please return to the login interface."
+        });
+    } catch (error) {
+        next(error);
+    }
 };

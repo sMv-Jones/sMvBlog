@@ -8,7 +8,7 @@ import App from './App.jsx'
 import store from './store/store'
 import './index.css'
 import { AuthLayout } from './components/index.js'
-import { Login, AddPost, Signup, VerifyEmail, Profile, EditPost, Post, AllPost, Home, NotFound, Contact, About, Dashboard } from './pages/index'
+import { Login, AddPost, Signup, VerifyEmail, ForgotPassword, Profile, EditPost, Post, AllPost, Home, NotFound, Contact, About, Dashboard } from './pages/index'
 
 
 const router = createBrowserRouter([
@@ -45,6 +45,14 @@ const router = createBrowserRouter([
                 element: (
                     <AuthLayout authentication={false}>
                         <Login />
+                    </AuthLayout>
+                ),
+            },
+            {
+                path: "/forgot-password",
+                element: (
+                    <AuthLayout authentication={false}>
+                        <ForgotPassword />
                     </AuthLayout>
                 ),
             },
