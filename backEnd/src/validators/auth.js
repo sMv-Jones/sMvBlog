@@ -75,6 +75,10 @@ export const updateProfileValidator = [
             return true;
         })
 ];
+
+/**
+ * VALIDATE PASSWORD CHANGE WITH OTP
+ */
 export const changePasswordValidator = [
     body('currentPassword')
         .notEmpty().withMessage('Current validation password is required'),
@@ -84,11 +88,25 @@ export const changePasswordValidator = [
         .isLength({ min: 8 }).withMessage('New secure password must be at least 8 characters long')
         .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter')
         .matches(/[a-z]/).withMessage('Password must contain at least one lowercase letter')
-        .matches(/[0-9]/).withMessage('Password must contain at least one numeric digit')
+        .matches(/[0-9]/).withMessage('Password must contain at least one numeric digit'),
+
+    body('otp')
+        .notEmpty().withMessage('Verification code is required')
+        .matches(/^\d{6}$/).withMessage('OTP must be a 6-digit number')
 ];
 
+/**
+ * VALIDATE ACCOUNT DELETION WITH OTP
+ */
+export const deleteAccountValidator = [
+    body('otp')
+        .notEmpty().withMessage('Verification code is required')
+        .matches(/^\d{6}$/).withMessage('OTP must be a 6-digit number')
+];
 
-
+/**
+ * Keep your original registration OTP validator completely untouched
+ */
 export const verifyOtpValidation = [
     body('otp')
         .matches(/^\d{6}$/)

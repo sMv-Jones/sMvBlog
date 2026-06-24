@@ -129,7 +129,7 @@ export class AuthService {
      */
     async deleteAccount(deletePayload) {
         try {
-            const { data } = await API.delete(`/auth/deleteAccount`, { data: deletePayload });
+            const { data } = await API.delete(`/auth/delete-account`, { data: deletePayload });
             return data;
         } catch (error) {
             console.error("Account Termination Exception:", error);

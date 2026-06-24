@@ -14,4 +14,12 @@ router.get('/me', protect, authCtrl.getCurrentUser);
 router.post("/verify-email", OTP, verifyOtpValidation, validate, authCtrl.verfiyRegister);
 router.get("/profile", protect, authCtrl.getProfile)
 router.put("/profile-update", protect, upload.single('profilePhoto'), updateProfileValidator, validate, authCtrl.updateProfile) 
+
+
+// router.post('/send-password-otp', protect, authCtrl.sendPasswordOtp);
+// router.post('/change-password', protect, authCtrl.changePassword);
+// router.post('/send-delete-otp', protect, authCtrl.sendDeleteAccountOtp);
+// router.delete('/delete-account', protect, authCtrl.deleteAccount);
+
+
 export default router;
