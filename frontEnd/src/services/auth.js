@@ -1,7 +1,7 @@
 import API from '../api/client';
 
 export class AuthService {
-    // Helper to format consistent error objects across all methods
+
     #handleError(error, defaultMessage) {
         return {
             success: false,
@@ -39,15 +39,13 @@ export class AuthService {
         }
     }
 
-    async getProfile(userName) {
+    async logout() {
         try {
-            const response = await API.get(
-                `/auth/profile${userName ? "?userName=" + userName : ""}`
-            );
-            return response.data;
+            await API.post('/auth/logout');
+            return { success: true };
         } catch (error) {
-            console.error("Auth Service :: getProfile :: error", error);
-            return this.#handleError(error, "Network error fetching profile");
+            console.error("Auth Service :: logout :: error", error);
+            return { success: false, message: "Logout anomaly encountered" };
         }
     }
 
@@ -61,19 +59,21 @@ export class AuthService {
         }
     }
 
-    async logout() {
+    async getProfile(userName) {
         try {
-            await API.post('/auth/logout');
-            return { success: true };
+            const response = await API.get(
+                `/auth/profile${userName ? "?userName=" + userName : ""}`
+            );
+            return response.data;
         } catch (error) {
-            console.error("Auth Service :: logout :: error", error);
-            return { success: false, message: "Logout anomaly encountered" };
+            console.error("Auth Service :: getProfile :: error", error);
+            return this.#handleError(error, "Network error fetching profile");
         }
     }
 
     async updateProfile(formData) {
         try {
-            const { data } = await API.put(`/auth/profile-update`, formData, {
+            const { data } = await API.put(`/auth/profile`, formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
             return data;
@@ -93,13 +93,13 @@ export class AuthService {
         }
     }
 
-    async sendDeleteAccountOtp() {
+    async requestPasswordResetOtp(email) {
         try {
-            const { data } = await API.post(`/auth/send-delete-otp`);
-            return data;
+            const response = await API.post('/auth/forgot-password', { email });
+            return response.data;
         } catch (error) {
-            console.error("Auth Service :: sendDeleteAccountOtp :: error", error);
-            return this.#handleError(error, "Failed to generate security token.");
+            console.error("Auth Service :: requestPasswordResetOtp :: error", error);
+            return this.#handleError(error, "Failed to send verification code");
         }
     }
 
@@ -113,33 +113,6 @@ export class AuthService {
         }
     }
 
-    async deleteAccount(deletePayload) {
-        try {
-            const { data } = await API.delete(`/auth/delete-account`, { data: deletePayload });
-            return data;
-        } catch (error) {
-            console.error("Auth Service :: deleteAccount :: error", error);
-            return this.#handleError(error, "Connection error during deletion.");
-        }
-    }
-    // --- FORGOT PASSWORD WORKFLOW METHODS ---
-
-    /**
-     * Step 1: Dispatches an OTP verification request to the backend for an unauthenticated user
-     */
-    async requestPasswordResetOtp(email) {
-        try {
-            const response = await API.post('/auth/forgot-password', { email });
-            return response.data;
-        } catch (error) {
-            console.error("Auth Service :: requestPasswordResetOtp :: error", error);
-            return this.#handleError(error, "Failed to send verification code");
-        }
-    }
-
-    /**
-     * Step 2: Submits the user-provided security OTP code along with their new password payload
-     */
     async resetPasswordWithOtp({ email, otp, newPassword }) {
         try {
             const response = await API.post('/auth/reset-password', { email, otp, newPassword });
@@ -150,8 +123,26 @@ export class AuthService {
         }
     }
 
-    // ----------------------------------------
-}
+    async sendDeleteAccountOtp() {
+        try {
+            const { data } = await API.post(`/auth/send-delete-otp`);
+            return data;
+        } catch (error) {
+            console.error("Auth Service :: sendDeleteAccountOtp :: error", error);
+            return this.#handleError(error, "Failed to generate security token.");
+        }
+    }
 
+    async deleteAccount(deletePayload) {
+        try {
+            const { data } = await API.delete(`/auth/delete-account`, { data: deletePayload });
+            return data;
+        } catch (error) {
+            console.error("Auth Service :: deleteAccount :: error", error);
+            return this.#handleError(error, "Connection error during deletion.");
+        }
+    }
+
+}
 const authService = new AuthService();
 export default authService;

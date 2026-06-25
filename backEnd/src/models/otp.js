@@ -21,7 +21,6 @@ const otpSchema = new mongoose.Schema(
   }
 );
 
-// Delete document 5 minutes after creation
 otpSchema.index({ createdAt: 1 }, { expireAfterSeconds: 300 });
 
 export default mongoose.model('OTP', otpSchema);

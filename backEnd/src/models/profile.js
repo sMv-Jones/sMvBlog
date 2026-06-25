@@ -5,7 +5,7 @@ const ProfileSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
-    unique: true // Good practice to ensure usernames are unique!
+    unique: true
   },
   displayName: {
     type: String,
@@ -24,7 +24,6 @@ const ProfileSchema = new mongoose.Schema({
     trim: true,
     default: ''
   },
-  // Aligned with your validator fields:
   socialLinks: {
     github: { type: String, default: '' },
     linkedin: { type: String, default: '' }

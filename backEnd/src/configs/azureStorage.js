@@ -1,15 +1,12 @@
 import { BlobServiceClient } from '@azure/storage-blob';
 import multer from 'multer';
 import dotenv from 'dotenv';
- import crypto from "crypto";
- import path from "path"
+import crypto from "crypto";
+import path from "path"
 dotenv.config();
 
-// Max file size: 5MB
-// export const upload = multer({ 
-//     storage: multer.memoryStorage(),
-//     limits: { fileSize: 5 * 1024 * 1024 } 
-// });
+const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING);
+const containerClient = blobServiceClient.getContainerClient(process.env.AZURE_CONTAINER_NAME);
 
 export const upload = multer({
     storage: multer.memoryStorage(),
@@ -37,8 +34,6 @@ export const upload = multer({
     }
 });
 
-const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING);
-const containerClient = blobServiceClient.getContainerClient(process.env.AZURE_CONTAINER_NAME);
 
 export const verifyAzureConnection = async () => {
     try {

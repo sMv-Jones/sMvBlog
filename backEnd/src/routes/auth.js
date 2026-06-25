@@ -1,26 +1,27 @@
 import express from 'express';
 import * as authCtrl from '../controllers/auth.js';
 import { protect, OTP } from '../middlewares/auth.js';
-import { registerValidation, loginValidation, verifyOtpValidation, forgotPasswordValidator, updateProfileValidator, resetPasswordValidator, changePasswordValidator, deleteAccountValidator } from '../validators/auth.js';
+import * as validators from '../validators/auth.js';
 import { validate } from '../middlewares/validate.js';
-import { authLimiter } from '../middlewares/rateLimiter.js';
+import { authLimiter, userApiLimiter, userAuthChangeLimiter, userForgotPasswordLimiter } from '../middlewares/rateLimiter.js';
 import { upload } from '../configs/azureStorage.js';
 const router = express.Router();
 
-router.post('/register', authLimiter, registerValidation, validate, authCtrl.registerUser);
-router.post('/login', authLimiter, loginValidation, validate, authCtrl.loginUser);
+router.post('/register', authLimiter, validators.registerValidation, validate, authCtrl.registerUser);
+router.post('/login', authLimiter, validators.loginValidation, validate, authCtrl.loginUser);
 router.post('/logout', authCtrl.logoutUser);
-router.get('/me', protect, authCtrl.getCurrentUser);
-router.post("/verify-email", OTP, verifyOtpValidation, validate, authCtrl.verfiyRegister);
-router.get("/profile", protect, authCtrl.getProfile)
-router.put("/profile-update", protect, upload.single('profilePhoto'), updateProfileValidator, validate, authCtrl.updateProfile)
+router.post("/verify-email", OTP, validators.verifyOtpValidation, validate, authCtrl.verfiyRegister);
 
+router.get('/me', protect, userApiLimiter, authCtrl.getCurrentUser);
+router.get("/profile", protect, userApiLimiter, authCtrl.getProfile)
+router.put("/profile", protect, validators.updateProfileValidator, validate, upload.single('profilePhoto'), authCtrl.updateProfile)
 
-router.post('/send-password-otp', protect, authCtrl.sendPasswordOtp);
-router.post('/change-password', protect, changePasswordValidator, validate, authCtrl.changePassword);
-router.post('/send-delete-otp', protect, authCtrl.sendDeleteAccountOtp);
-router.delete('/delete-account', protect, deleteAccountValidator, validate, authCtrl.deleteAccount);
+router.post('/send-password-otp', protect, userAuthChangeLimiter, authCtrl.sendPasswordOtp);
+router.post('/change-password', protect, userAuthChangeLimiter, validators.changePasswordValidator, validate, authCtrl.changePassword);
+router.post('/send-delete-otp', protect, userAuthChangeLimiter, authCtrl.sendDeleteAccountOtp);
+router.delete('/delete-account', protect, userAuthChangeLimiter, validators.deleteAccountValidator, validate, authCtrl.deleteAccount);
 
-router.post('/forgot-password', forgotPasswordValidator,validate, authCtrl.requestPasswordResetOtp);
-router.post('/reset-password', resetPasswordValidator, validate, authCtrl.resetPasswordWithOtp);
+router.post('/forgot-password', userForgotPasswordLimiter, validators.forgotPasswordValidator, validate, authCtrl.requestPasswordResetOtp);
+router.post('/reset-password', userForgotPasswordLimiter, validators.resetPasswordValidator, validate, authCtrl.resetPasswordWithOtp);
+
 export default router;

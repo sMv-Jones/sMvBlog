@@ -8,7 +8,7 @@ export class PostService {
             formData.append('slug', slug);
             formData.append('content', content);
             formData.append('status', status);
-            formData.append('image', imageFile); // The actual file object from <input type="file"/>
+            formData.append('image', imageFile);
 
             const response = await API.post('/posts', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
@@ -57,7 +57,7 @@ export class PostService {
             return null;
         }
     }
-    // 1. Updated & Validated: Fetches user's own posts with an optional timeframe filter
+
     async getUserPost(filters = {}) {
         try {
             const { time } = filters;
@@ -78,7 +78,6 @@ export class PostService {
         }
     }
 
-    // 2. Updated & Sanitized: Fetches public active posts with username and timeframe filters
     async getPosts(filters = {}) {
         try {
             const { userName, time, status = 'active' } = filters;

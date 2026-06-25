@@ -41,17 +41,14 @@ export const emailValidation = [
         .isEmail().withMessage("Please present a valid email configuration"),
 ];
 
-
 export const updateProfileValidator = [
-    // 1. Validate Bio
     body('bio')
         .optional({ checkFalsy: true })
         .trim()
         .isLength({ max: 300 }).withMessage('Bio cannot exceed 300 characters'),
 
-    // 2. Validate Nested GitHub Link
     body('socialLinks.github')
-        .optional({ checkFalsy: true }) // Doesn't fail if left blank
+        .optional({ checkFalsy: true })
         .trim()
         .isURL().withMessage('GitHub link must be a valid URL structure')
         .custom((value) => {
@@ -62,9 +59,8 @@ export const updateProfileValidator = [
             return true;
         }),
 
-    // 3. Validate Nested LinkedIn Link
     body('socialLinks.linkedin')
-        .optional({ checkFalsy: true }) // Doesn't fail if left blank
+        .optional({ checkFalsy: true })
         .trim()
         .isURL().withMessage('LinkedIn link must be a valid URL structure')
         .custom((value) => {
@@ -76,33 +72,26 @@ export const updateProfileValidator = [
         })
 ];
 
-/**
- * VALIDATE PASSWORD CHANGE WITH OTP
- */
 export const changePasswordValidator = [
     body('currentPassword')
         .notEmpty().withMessage('Current password is required.'),
-    
+
     body('newPassword')
         .isLength({ min: 8 }).withMessage('New password must be at least 8 characters long.'),
-        
+
     body('otp')
         .isLength({ min: 6, max: 6 }).withMessage('OTP must be exactly 6 digits.')
         .isNumeric().withMessage('OTP must contain numbers only.'),
-        
+
 ];
 
-// Validation rules for deleting an account
 export const deleteAccountValidator = [
     body('otp')
         .isLength({ min: 6, max: 6 }).withMessage('OTP must be exactly 6 digits.')
         .isNumeric().withMessage('OTP must contain numbers only.'),
-        
+
 ];
 
-/**
- * Keep your original registration OTP validator completely untouched
- */
 export const verifyOtpValidation = [
     body('otp')
         .matches(/^\d{6}$/)
@@ -122,18 +111,17 @@ export const resetPasswordValidator = [
         .trim()
         .notEmpty().withMessage('Email address context identifier missing.')
         .isEmail().withMessage('Invalid email routing metadata.'),
-    
+
     body('otp')
         .trim()
         .notEmpty().withMessage('Verification code is required.')
         .isLength({ min: 6, max: 6 }).withMessage('Security OTP code must be exactly 6 digits.')
         .isNumeric().withMessage('Security OTP must contain only numeric digits.'),
-        
+
     body('newPassword')
         .trim()
         .notEmpty().withMessage('Please enter your new password.')
         .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long.')
-        // Matches the frontend react-hook-form schema validations
         .matches(/[A-Z]/).withMessage('Password requires at least one uppercase letter.')
         .matches(/[a-z]/).withMessage('Password requires at least one lowercase letter.')
         .matches(/[0-9]/).withMessage('Password requires at least one numeric value.'),
