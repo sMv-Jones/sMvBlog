@@ -32,12 +32,10 @@ export default function TextEditor({ name, control, label, defaultValue = "" }) 
                                 "preview"
                             ],
 
-                            // 1. Added "blocks" to the toolbar to show the Heading/Paragraph dropdown menu
                             toolbar:
                                 "undo redo | blocks | bold italic underline | " +
                                 "bullist numlist | link image | table | code | preview",
 
-                            // 2. Specified exactly which text block types you want to allow
                             block_formats: "Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4",
 
                             content_style:

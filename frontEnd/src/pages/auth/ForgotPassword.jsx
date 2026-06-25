@@ -16,14 +16,14 @@ export default function ForgotPassword() {
     // Multi-box split input reference handling
     const otpRefs = useRef([]);
 
-    // Step 1: Form setup for sending OTP
+    //Form setup for sending OTP
     const {
         register: registerEmail,
         handleSubmit: handleEmailSubmit,
         formState: { errors: emailErrors }
     } = useForm();
 
-    // Step 2: Form setup for providing the new password + OTP code assembly
+    //Form setup for providing the new password + OTP code assembly
     const {
         register: registerReset,
         handleSubmit: handleResetSubmit,

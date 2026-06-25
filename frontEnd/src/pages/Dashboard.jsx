@@ -4,12 +4,9 @@ import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import authService from "../services/auth";
 import { Container, DeleteConfirmationModal, Button, Input } from "../components/index";
-
-// Imported your exact action creator from your authSlice file
 import { logout } from "../store/authSlice";
 
 export default function Dashboard() {
-    // Core user properties sourced from global Redux context
     const userName = useSelector((state) => state.auth?.userName);
     const email = useSelector((state) => state.auth?.userEmail);
     const userDisplayName = useSelector((state) => state.auth?.userDisplayName);
@@ -53,7 +50,7 @@ export default function Dashboard() {
         reset: resetPassword,
         setValue: setPasswordFormValue,
         getValues: getPasswordValues,
-        control: passwordControl, // Extracted for useWatch to satisfy React Compiler
+        control: passwordControl,
         formState: { errors: passwordErrors }
     } = useForm();
 
@@ -62,10 +59,9 @@ export default function Dashboard() {
         handleSubmit: handleDeleteSubmit,
         reset: resetDelete,
         setValue: setDeleteFormValue,
-        control: deleteControl, // Extracted for useWatch to satisfy React Compiler
+        control: deleteControl,
     } = useForm();
 
-    // Replaced watch() with useWatch() hooks to make code compatible with React Compiler
     const watchedPasswordOtp = useWatch({
         control: passwordControl,
         name: "passwordOtp",
@@ -278,11 +274,7 @@ export default function Dashboard() {
                 resetDelete();
 
                 // 1. Clean global Redux memory safely using your slice action
-                dispatch(logout());
-
-                // 2. Wipe explicit browser storage tokens
-                localStorage.clear();
-                sessionStorage.clear();
+                dispatch(logout()); 
 
                 // 3. Route cleanly back to public login gate and wipe navigation stack history
                 navigate("/login", { replace: true });

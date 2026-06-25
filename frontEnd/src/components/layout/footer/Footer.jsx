@@ -12,7 +12,9 @@ function Footer() {
                 <div className="flex-1 flex flex-col gap-3">
                     <Logo width="100px" />
 
-                    <h3 className="text-xl font-semibold">sMv|Blog</h3>
+                    <h3 className="text-xl md:text-2xl font-semibold tracking-wide bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 bg-clip-text text-transparent inline-block">
+                        sMv|Blog
+                    </h3>
 
                     <p className="text-gray-400 text-sm leading-relaxed">
                         Welcome to sMv|Blog! <br />

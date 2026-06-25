@@ -1,57 +1,80 @@
 @import "tailwindcss";
-*, *::before, *::after {
-    box-sizing: border-box;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
+
 body {
-    /* full-viewport gradient that won't be clipped by content */
-    min-height: 100vh;
-    margin: 0;
-    background: linear-gradient(to right, #a80bd8, #0ab5d3);
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    background-size: cover;
-}   
+  /* full-viewport gradient that won't be clipped by content */
+  min-height: 100vh;
+  margin: 0;
+  /* background: linear-gradient(to right, #a80bd8, #0ab5d3); */
+  background: linear-gradient(to right, #5a0ca0, #086a86);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: cover;
+}
 
 
 /* Standard CSS - 100% safe from compiler errors */
 .browser-css h1 {
-  font-size: 2.25rem; /* text-3xl */
-  font-weight: 800;    /* font-extrabold */
-  margin-top: 1.5rem;  /* mt-6 */
-  margin-bottom: 1rem; /* mb-4 */
+  font-size: 2.25rem;
+  /* text-3xl */
+  font-weight: 800;
+  /* font-extrabold */
+  margin-top: 1.5rem;
+  /* mt-6 */
+  margin-bottom: 1rem;
+  /* mb-4 */
   color: #ffffff;
 }
 
 .browser-css h2 {
-  font-size: 1.5rem;   /* text-2xl */
-  font-weight: 700;    /* font-bold */
-  margin-top: 1.25rem; /* mt-5 */
-  margin-bottom: 0.75rem; /* mb-3 */
+  font-size: 1.5rem;
+  /* text-2xl */
+  font-weight: 700;
+  /* font-bold */
+  margin-top: 1.25rem;
+  /* mt-5 */
+  margin-bottom: 0.75rem;
+  /* mb-3 */
   color: #ffffff;
 }
 
 .browser-css h3 {
-  font-size: 1.25rem;  /* text-xl */
-  font-weight: 600;    /* font-semibold */
-  margin-top: 1rem;    /* mt-4 */
-  margin-bottom: 0.5rem; /* mb-2 */
+  font-size: 1.25rem;
+  /* text-xl */
+  font-weight: 600;
+  /* font-semibold */
+  margin-top: 1rem;
+  /* mt-4 */
+  margin-bottom: 0.5rem;
+  /* mb-2 */
   color: #ffffff;
 }
 
 .browser-css p {
-  margin-bottom: 1rem; /* mb-4 */
-  line-height: 1.625;  /* leading-relaxed */
+  margin-bottom: 1rem;
+  /* mb-4 */
+  line-height: 1.625;
+  /* leading-relaxed */
   color: rgba(255, 255, 255, 0.8);
 }
 
 .browser-css ul {
-  list-style-type: disc; /* list-disc */
-  padding-left: 1.5rem;   /* pl-6 */
-  margin-bottom: 1rem;   /* mb-4 */
+  list-style-type: disc;
+  /* list-disc */
+  padding-left: 1.5rem;
+  /* pl-6 */
+  margin-bottom: 1rem;
+  /* mb-4 */
 }
 
 .browser-css li {
-  margin-bottom: 0.25rem; /* mb-1 */
+  margin-bottom: 0.25rem;
+  /* mb-1 */
   color: rgba(255, 255, 255, 0.85);
 }
 

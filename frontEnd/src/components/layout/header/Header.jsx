@@ -32,7 +32,7 @@ function Header() {
             <Logo width="100px" />
           </Link>
 
-          <h1 className="text-xl md:text-2xl font-semibold tracking-wide text-white/90">
+          <h1 className="text-xl md:text-2xl font-semibold tracking-wide bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 bg-clip-text text-transparent inline-block">
             sMv|Blog
           </h1>
         </div>

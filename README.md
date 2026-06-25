@@ -1,469 +1,207 @@
-# sMvBlog
-This an blog appliction created for as an learning project for web development
+# sMv | Blog
 
-# Blog API Backend
-
-A secure and scalable REST API for managing blog posts, user authentication, and image uploads using Azure Blob Storage.
-
-## Features
-
-- User Registration & Authentication
-- JWT Authentication with HttpOnly Cookies
-- Blog Post CRUD Operations
-- Azure Blob Storage Image Uploads
-- Input Validation using Express Validator
-- HTML Sanitization using DOMPurify
-- Rate Limiting for Authentication Routes
-- Secure Password Hashing with bcrypt
-- Security Headers with Helmet
-- MongoDB Integration using Mongoose
+Welcome to the **sMv | Blog** repository. This is a full-stack blogging application built using the **MERN Stack**, featuring rich-text content creation with **TinyMCE Editor**, secure image hosting with **Azure Blob Storage**, and automated email notifications using **Nodemailer**.
 
 ---
 
-## Tech Stack
+## 🚀 Tech Stack
+
+### Frontend
+
+* React.js
+* TinyMCE Rich Text Editor
+* Vite
 
 ### Backend
 
-- Node.js
-- Express.js
+* Node.js
+* Express.js
 
 ### Database
 
-- MongoDB
-- Mongoose
+* MongoDB
 
-### Authentication
+### Cloud Storage
 
-- JWT (JSON Web Tokens)
-- bcryptjs
+* Azure Blob Storage (for blog images and attachments)
 
-### File Storage
+### Email Service
 
-- Azure Blob Storage
-- Multer
-
-### Security
-
-- Helmet
-- Express Rate Limit
-- DOMPurify
-- Express Validator
+* Nodemailer
 
 ---
 
-## Project Structure
+## 📁 Repository Structure
 
 ```text
-src/
-├── configs/
-│   ├── azureStorage.js
-│   └── db.js
-│
-├── controllers/
-│   ├── auth.js
-│   └── post.js
-│
-├── middlewares/
-│   ├── auth.js
-│   ├── errorHandler.js
-│   ├── rateLimiter.js
-│   └── validate.js
-│
-├── models/
-│   ├── user.js
-│   └── post.js
-│
-├── routes/
-│   ├── auth.js
-│   └── post.js
-│
-├── utils/
-│   └── helpers.js
-│
-├── validators/
-│   ├── auth.js
-│   └── post.js
-│
-└── server.js
+sMv-Blog/
+├── frontEnd/     # React client application
+└── backEnd/      # Node/Express API server
 ```
 
 ---
 
-# Getting Started
+## 🛠️ Getting Started
 
-## Prerequisites
+To run the application locally, install dependencies and start both the frontend and backend servers.
 
-- Node.js v18+
-- MongoDB
-- Azure Storage Account
+### 1. Install Dependencies
 
----
-
-## Installation
-
-### Clone Repository
+Navigate into each directory and install the required packages:
 
 ```bash
-git clone <repository-url>
-cd blog-api
-```
+# Install frontend dependencies
+cd frontEnd
+npm install
 
-### Install Dependencies
-
-```bash
+# Install backend dependencies
+cd ../backEnd
 npm install
 ```
 
 ---
 
-## Environment Variables
+### 2. Run the Application
 
-Create a `.env` file in the project root.
+Both frontend and backend share the same script structure.
 
-```env
-PORT=5000
-
-NODE_ENV=development
-
-MONGODB_URI=mongodb://localhost:27017/blog
-
-JWT_SECRET=your_super_secret_key
-
-FRONTEND_URL=http://localhost:3000
-
-AZURE_STORAGE_CONNECTION_STRING=your_azure_storage_connection_string
-
-AZURE_CONTAINER_NAME=blog-images
-```
-
----
-
-## Running the Application
-
-### Development
+#### Development Mode (Hot Reloading)
 
 ```bash
 npm run dev
 ```
 
-### Production
+#### Production Mode
 
 ```bash
-npm start
+npm run start
 ```
+
+> 💡 **Tip:** Open two terminal windows or tabs—one for the frontend and one for the backend—and run `npm run dev` in both directories for local development.
 
 ---
 
-# API Endpoints
+## 🔑 Environment Variables
 
-Base URL:
+Proper configuration of environment variables is required before running the application.
 
-```http
-/api
-```
+### 📝 Backend Configuration
 
----
+Create a `.env` file inside the `backEnd/` directory.
 
-# Authentication
-
-## Register User
-
-```http
-POST /api/auth/register
-```
-
-### Request Body
-
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "Password123"
-}
-```
-
-### Success Response
-
-```json
-{
-  "success": true,
-  "message": "User registered successfully"
-}
-```
-
----
-
-## Login User
-
-```http
-POST /api/auth/login
-```
-
-### Request Body
-
-```json
-{
-  "email": "john@example.com",
-  "password": "Password123"
-}
-```
-
-### Success Response
-
-```json
-{
-  "success": true,
-  "message": "Login successful"
-}
-```
-
----
-
-## Logout User
-
-```http
-POST /api/auth/logout
-```
-
-### Success Response
-
-```json
-{
-  "success": true,
-  "message": "Logout successful"
-}
-```
-
----
-
-## Get Current User
-
-```http
-GET /api/auth/me
-```
-
-### Authentication Required
-
-### Success Response
-
-```json
-{
-  "success": true,
-  "user": {
-    "_id": "...",
-    "name": "John Doe",
-    "email": "john@example.com"
-  }
-}
-```
-
----
-
-# Posts
-
-## Get All Active Posts
-
-```http
-GET /api/posts
-```
-
-### Success Response
-
-```json
-{
-  "success": true,
-  "posts": []
-}
-```
-
----
-
-## Get Single Post
-
-```http
-GET /api/posts/:slug
-```
-
-### Success Response
-
-```json
-{
-  "success": true,
-  "post": {}
-}
-```
-
----
-
-## Create Post
-
-```http
-POST /api/posts
-```
-
-### Authentication Required
-
-### Content-Type
-
-```http
-multipart/form-data
-```
-
-### Form Fields
-
-| Field | Type | Required |
-|---------|---------|---------|
-| title | string | Yes |
-| content | string | Yes |
-| status | string | No |
-| image | file | No |
-
-### Success Response
-
-```json
-{
-  "success": true,
-  "post": {}
-}
-```
-
----
-
-## Update Post
-
-```http
-PUT /api/posts/:featuredImage
-```
-
-### Authentication Required
-
-### Success Response
-
-```json
-{
-  "success": true,
-  "post": {}
-}
-```
-
----
-
-## Delete Post
-
-```http
-DELETE /api/posts/:slug
-```
-
-### Authentication Required
-
-### Success Response
-
-```json
-{
-  "success": true,
-  "message": "Post deleted successfully"
-}
-```
-
----
-
-# Authentication Flow
-
-1. User registers an account.
-2. User logs in.
-3. Server generates a JWT.
-4. JWT is stored in a secure HttpOnly cookie.
-5. Protected routes validate the JWT.
-6. User can create, update, and delete their own posts.
-
----
-
-# Security Features
-
-### Password Security
-
-- bcrypt hashing
-- Password never stored in plain text
-
-### Authentication Security
-
-- JWT tokens
-- HttpOnly cookies
-- SameSite protection
-
-### API Security
-
-- Helmet security headers
-- Request validation
-- Rate limiting
-- HTML sanitization
-
-### Authorization
-
-- Users can only modify their own posts
-- Ownership checks on update/delete operations
-
----
-
-# Azure Blob Storage
-
-Uploaded images are stored in Azure Blob Storage.
-
-Required environment variables:
+**Path:** `backEnd/.env`
 
 ```env
-AZURE_STORAGE_CONNECTION_STRING=
-AZURE_CONTAINER_NAME=
+# Server Configuration
+PORT=5000
+NODE_ENV=development # development or production
+FRONTEND_URL=http://localhost:5173 # Change according to your deployment
+
+# Database
+MONGODB_URI=your_mongodb_connection_string
+
+# Azure Blob Storage
+AZURE_STORAGE_CONNECTION_STRING=your_azure_storage_connection_string
+AZURE_CONTAINER_NAME=your_container_name
+
+# Nodemailer Configuration
+MAIL=your_email@gmail.com
+MAIL_PASS=your_app_specific_password
+
+# JWT Secret
+JWT_SECRET=your_super_secret_jwt_key
 ```
 
-Images are uploaded during post creation and update.
+### 📝 Frontend Configuration
 
----
+Create a `.env` file inside the `frontEnd/` directory.
 
-# Error Handling
+**Path:** `frontEnd/.env`
 
-The application includes centralized error handling middleware for:
+```env
+# Backend API URL
+VITE_API_URL=http://localhost:5000/api
 
-- Validation Errors
-- Authentication Errors
-- Database Errors
-- File Upload Errors
-- Internal Server Errors
-
----
-
-# Future Improvements
-
-- Pagination
-- Search & Filtering
-- Refresh Tokens
-- Role-Based Access Control (RBAC)
-- Swagger/OpenAPI Documentation
-- Unit & Integration Tests
-- Docker Support
-- CI/CD Pipeline
-- Logging with Pino or Winston
-- Health Check Endpoint
-
----
-
-# Scripts
-
-```json
-{
-  "start": "node src/server.js",
-  "dev": "nodemon src/server.js"
-}
+# TinyMCE API Key
+VITE_TINY_MCE_API_KEY=your_tinymce_api_key
 ```
 
+### TinyMCE Setup
+
+This project uses TinyMCE as the rich-text editor for creating and editing blog content.
+
+1. Create a free TinyMCE account.
+2. Generate an API key from the TinyMCE dashboard.
+3. Add the API key to your frontend `.env` file:
+
+```env
+VITE_TINY_MCE_API_KEY=your_tinymce_api_key
+```
+
+4. Restart the frontend development server after updating environment variables.
+
+Without a valid TinyMCE API key, the editor may not load correctly in development or production.
+
 ---
 
-# License
+## ✨ Features
 
-This project is licensed under the MIT License.
+* 📝 Create, edit, and publish blog posts
+* ✍️ Rich-text content editing with TinyMCE Editor
+* 🖼️ Upload and manage blog images through Azure Blob Storage
+* 📧 Automated email notifications using Nodemailer
+* ⚡ Full MERN Stack architecture
+* 🔒 Secure environment-based configuration
+* 🌐 RESTful API backend
+* 📱 Responsive user interface
 
 ---
 
-# Author
+## 🛡️ Troubleshooting & Tips
 
-Developed using Node.js, Express, MongoDB, and Azure Blob Storage.
+### TinyMCE Editor Not Loading
+
+* Verify that `VITE_TINY_MCE_API_KEY` is set correctly.
+* Ensure the API key is active in your TinyMCE account.
+* Restart the frontend server after updating the `.env` file.
+
+### Azure Storage Issues
+
+Ensure your Azure Blob Storage container access level is configured as either:
+
+* **Blob** – Public read access for blobs only.
+* **Container** – Public read access for the entire container.
+
+This is required if blog images should be publicly accessible.
+
+### Nodemailer Issues
+
+If using Gmail as the SMTP provider:
+
+* Do not use your regular Gmail password.
+* Generate and use an App Password from your Google Account Security settings.
+
+### CORS Errors
+
+If requests from the frontend are being blocked:
+
+* Verify that your backend CORS configuration allows requests from your frontend URL.
+* Example:
+
+```text
+http://localhost:5173
+```
+
+or whichever port your frontend application is running on.
+
+---
+
+## 📜 License
+
+This project is intended for educational and personal use. Add an appropriate license if you plan to distribute or open-source the project.
+
+---
+
+## 👨‍💻 Author
+
+Developed as part of the **sMv | Blog** project using the MERN Stack, TinyMCE Editor, Azure Blob Storage, and Nodemailer.

@@ -50,7 +50,7 @@ function Home() {
                         {/* Main Heading */}
                         <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.15] mb-6">
                             Discover Engineering at{' '}
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 font-extrabold">
+                            <span className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 font-extrabold">
                                 sMv|Blog
                             </span>
                         </h1>

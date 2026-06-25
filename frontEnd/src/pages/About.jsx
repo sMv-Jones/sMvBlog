@@ -5,11 +5,14 @@ export default function About() {
         <div className="min-h-screen py-10 px-4 text-white">
             <Container>
                 <div className="max-w-4xl mx-auto rounded-3xl border border-white/10 bg-black/60 backdrop-blur-2xl shadow-2xl p-6 md:p-12">
-                    
+
                     {/* Header */}
                     <div className="text-center md:text-left mb-8">
                         <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4">
-                            About <span className="text-blue-500">sMv|Blog</span>
+                            About{" "}
+                            <span className="bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 bg-clip-text text-transparent inline-block">
+                                sMv|Blog
+                            </span>
                         </h1>
                         <p className="text-lg text-white/70 max-w-2xl">
                             Welcome to sMv|Blog, an engineering journal dedicated to full-stack development, database architecture, and technical writing.

@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 
-// Added `className` prop with an empty default string
 function PostCard({ title, featuredImage, slug, updatedAt, content, userName, displayName, className = "" }) {
   const cleanSnippet = content
     ? content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()

@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Button from '../common/Button';
 
-// Added hideUsername prop (defaults to false)
 const PostFilter = ({ onApplyFilters, hideUsername = false }) => {
     const [userName, setUserName] = useState('');
     const [time, setTime] = useState('');
