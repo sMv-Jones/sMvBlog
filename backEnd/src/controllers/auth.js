@@ -698,7 +698,17 @@ export const deleteAccount = async (req, res, next) => {
         if (profile?.profilePhoto && !profile.profilePhoto.startsWith('profilePhoto')) {
             await deleteFromAzure(profile.profilePhoto);
         }
-
+        if (profile) {
+            // 2. Clear the email data field
+            profile.email = "";
+            profile.isActive = false;
+            profile.socialLinks = {
+                github: "",
+                linkedin: ""
+            };
+            // 3. Persist the changes back to your database
+            await profile.save();
+        }
         // Atomic data expunging routine
         await User.deleteOne({ _id: user._id });
         await OTP.deleteOne({ _id: otpRecord._id });
@@ -767,7 +777,6 @@ export const requestPasswordResetOtp = async (req, res, next) => {
 export const resetPasswordWithOtp = async (req, res, next) => {
     try {
         const { email, otp, newPassword } = req.body;
-        console.log(otp);
         if (!email || !otp || !newPassword) {
             res.status(400);
             throw new Error("Missing structural payload fields (email, otp, and newPassword are required).");

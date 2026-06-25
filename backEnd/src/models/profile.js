@@ -14,7 +14,6 @@ const ProfileSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true,
     unique: true,
     lowercase: true,
     trim: true,
@@ -42,6 +41,11 @@ const ProfileSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  isActive: {
+    type: Boolean,
+    required: true,
+    default: true
+  }
 });
 
 export default mongoose.model('Profile', ProfileSchema);

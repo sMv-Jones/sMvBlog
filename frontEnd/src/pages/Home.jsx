@@ -3,7 +3,7 @@ import postService from "../services/post";
 import { Container, PostCard, Button } from '../components/index'
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import {PostFilter} from '../components/index'; // Adjust the import path as needed
+import { PostFilter } from '../components/index'; // Adjust the import path as needed
 
 function Home() {
     const [posts, setPosts] = useState([])
@@ -12,7 +12,7 @@ function Home() {
     // ✅ LINTER FIX: Set initial state dynamically. 
     // If the user is logged in, start with loading true. If logged out, start with loading false.
     const [loading, setLoading] = useState(() => !!AuthStatus)
-    
+
     // State to hold the active filter variables
     const [activeFilters, setActiveFilters] = useState({})
 
@@ -39,27 +39,45 @@ function Home() {
     // State 1: Logged Out State
     if (!AuthStatus) {
         return (
-            <div className="min-h-[80vh] flex items-center justify-center py-10 px-4 text-white">
-                <Container>
-                    <div className="max-w-2xl mx-auto rounded-3xl border border-white/10 bg-black/60 backdrop-blur-2xl shadow-2xl p-8 md:p-12 text-center">
-                        <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4">
-                            Welcome to <span className="text-blue-500">sMv|Blog</span>
+            <div className="relative min-h-[85vh] flex items-center justify-center py-12 px-4 overflow text-white">
+                {/* Subtle Decorative Background Blobs */}
+                <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+                <Container className="relative z-10">
+                    <div className="max-w-3xl mx-auto rounded-3xl border border-white/[0.08] bg-black/60 backdrop-blur-xl shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] p-8 md:p-16 text-center transition-all duration-300 hover:border-white/10">
+
+                        {/* Main Heading */}
+                        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.15] mb-6">
+                            Discover Engineering at{' '}
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 font-extrabold">
+                                sMv|Blog
+                            </span>
                         </h1>
-                        <p className="text-lg text-white/70 max-w-md mx-auto mb-8">
-                            Explore full-stack architecture, database deep-dives, <br className="hidden sm:inline" />
-                            and performance optimizations on sMv|Blog.
+
+                        {/* Subtitle */}
+                        <p className="text-base md:text-lg text-zinc-400 max-w-xl mx-auto mb-10 leading-relaxed">
+                            Explore deep-dives into full-stack architecture, high-performance database optimizations, and battle-tested scaling strategies.
                         </p>
 
-                        <div className="h-px bg-white/10 my-6"></div>
+                        {/* Decorative Divider */}
+                        <div className="w-16 h-[2px] bg-gradient-to-r from-transparent via-zinc-700 to-transparent mx-auto mb-10"></div>
 
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-6">
-                            <Link to='/signup' className="w-full sm:w-auto">
-                                <Button>New User! Register Here</Button>
+                        {/* Action Buttons */}
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                            <Link to='/signup' className="w-full sm:w-auto group">
+                                <Button className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/20 transform transition-all duration-200 active:scale-95 group-hover:scale-[1.02]">
+                                    Get Started — It's Free
+                                </Button>
                             </Link>
-                            <Link to='/login' className="w-full sm:w-auto">
-                                <Button>Login to read posts</Button>
+
+                            <Link to='/login' className="w-full sm:w-auto group">
+                                <Button className="w-full sm:w-auto px-8 py-4 bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white font-semibold rounded-xl border border-white/10 backdrop-blur-sm transform transition-all duration-200 active:scale-95 group-hover:scale-[1.02]">
+                                    Login to read posts
+                                </Button>
                             </Link>
                         </div>
+
                     </div>
                 </Container>
             </div>
@@ -99,7 +117,7 @@ function Home() {
                 </div>
 
                 {/* Filter Controls Bar Container */}
-               <div className="max-w-7xl mx-auto relative z-40">
+                <div className="max-w-7xl mx-auto relative z-40">
                     <PostFilter onApplyFilters={setActiveFilters} />
                 </div>
 

@@ -5,22 +5,33 @@ import { useNavigate } from "react-router-dom";
 import { useSearchParams } from 'react-router-dom';
 import { PostCard } from "../../components/index";
 import authService from "../../services/auth";
-import {useSelector} from "react-redux"
+import { useSelector } from "react-redux";
 
 export default function Profile() {
     const [searchParams] = useSearchParams();
     const [posts, setPosts] = useState([]);
     const [userData, setUserData] = useState(null);
+    const [isAccountDeleted, setIsAccountDeleted] = useState(false); 
     const userName = searchParams.get("userName");
     const navigate = useNavigate();
-    const authStatus = useSelector(state=>state.auth.user)
+    const authStatus = useSelector(state => state.auth.user);
+
     useEffect(() => {
         async function fetchProfile() {
             try {
                 const data = await authService.getProfile(userName);
 
                 if (data?.success) {
+                    // Check if the profile points to a soft-deleted account
+                    if (data.profile && data.profile.isActive === false) {
+                        setIsAccountDeleted(true);
+                    } else {
+                        setIsAccountDeleted(false);
+                    }
+
                     setUserData(data.profile);
+
+                    // Fetch blogs normally even if soft-deleted
                     if (userName) {
                         postServices.getPosts({ userName }).then((fetchedPosts) => {
                             if (fetchedPosts) setPosts(fetchedPosts);
@@ -31,8 +42,8 @@ export default function Profile() {
                         });
                     }
                 } else {
-                    if(authStatus) navigate("/not-found", { replace: true });
-                    else navigate("/login")
+                    if (authStatus) navigate("/not-found", { replace: true });
+                    else navigate("/login");
                 }
             } catch (err) {
                 console.error(err);
@@ -47,7 +58,6 @@ export default function Profile() {
         return null; 
     }
 
-    // Configured to display the full calendar date cleanly
     const formattedJoinDate = userData.date 
         ? new Date(userData.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) 
         : '';
@@ -59,16 +69,28 @@ export default function Profile() {
 
                     {/* Left Column: Profile Card Sidebar */}
                     <aside className="lg:col-span-1 rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl shadow-xl p-8 text-center lg:sticky lg:top-10 relative z-10">
+                        
+                        {/* SUBTLE STATUS INDICATOR: Static red alert badge without any pulsing animation */}
+                        {isAccountDeleted && (
+                            <div className="mb-6 py-2 px-3 rounded-xl bg-red-950/30 border border-red-500/20 text-red-400 text-xs font-bold uppercase tracking-widest text-center">
+                                Account Deactivated
+                            </div>
+                        )}
+
                         <div className="relative w-40 h-40 mx-auto mb-6">
                             <img
                                 src={userData.profilePhoto || "https://via.placeholder.com/150"}
                                 alt={`${userData.displayName}'s avatar`}
-                                className="w-full h-full object-cover rounded-full border border-white/10 p-1.5 shadow-inner"
+                                className={`w-full h-full object-cover rounded-full border p-1.5 shadow-inner transition-all duration-300 ${
+                                    isAccountDeleted ? "border-red-500/20 grayscale contrast-125 opacity-50" : "border-white/10"
+                                }`}
                             />
-                            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-blue-500/20 to-transparent pointer-events-none" />
+                            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-blue-500/10 to-transparent pointer-events-none" />
                         </div>
 
-                        <h1 className="text-3xl font-black tracking-tight text-white mb-1">{userData.displayName}</h1>
+                        <h1 className="text-3xl font-black tracking-tight text-white mb-1">
+                            {userData.displayName}
+                        </h1>
                         <p className="text-blue-400 text-base font-mono mb-5">@{userData.userName}</p>
 
                         {userData.bio && (
@@ -118,7 +140,6 @@ export default function Profile() {
                     {/* Right Column: Blog Grid/Feed */}
                     <main className="lg:col-span-2 space-y-6">
                         <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                            {/* Dynamically uses the user's name for a cleaner feel */}
                             <h2 className="text-3xl font-extrabold tracking-tight text-white">
                                 {userData.displayName}'s Blogs
                             </h2>
@@ -143,4 +164,4 @@ export default function Profile() {
             </Container>
         </div>
     );
-}   
+}

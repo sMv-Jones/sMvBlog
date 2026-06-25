@@ -33,6 +33,10 @@ export default function ForgotPassword() {
         reset: resetFields
     } = useForm();
 
+    // 💡 FORCE BACKGROUND CSS VARIABLES FOR ENTIRE LIFE CYCLE (Typing, Blur, Autofill)
+    const fixedInputClass = "!bg-black/60 !text-white !border-white/10 focus:!bg-neutral-900 focus:!border-blue-500/50 focus:!text-white active:!bg-black/60 text-base rounded-xl px-4 py-3 autofill:shadow-[inset_0_0_0_1000px_#0a0a0a] autofill:text-white [-webkit-text-fill-color:white_!important]";
+    const fixedOtpClass = "w-12 h-14 !bg-black/60 !text-white border border-white/10 focus:border-blue-500 text-center text-xl font-bold font-mono rounded-xl focus:outline-none focus:!bg-neutral-900 transition-all autofill:shadow-[inset_0_0_0_1000px_#0a0a0a] autofill:text-white [-webkit-text-fill-color:white_!important]";
+
     // Input cursor forwarding behaviors for the split security boxes
     const handleOtpChange = (e, index) => {
         const val = e.target.value.replace(/\D/g, "");
@@ -73,7 +77,6 @@ export default function ForgotPassword() {
         setIsLoading(true);
         setFeedbackMessage({ text: "", isError: false });
         try {
-            // Adjust the authService endpoint name according to your API mapping
             const response = await authService.requestPasswordResetOtp(data.email);
             if (response?.success) {
                 setUserEmail(data.email);
@@ -102,7 +105,6 @@ export default function ForgotPassword() {
 
         setIsLoading(true);
         try {
-            // Adjust to fit your actual authService.resetPasswordWithOtp parameter names
             const response = await authService.resetPasswordWithOtp({
                 email: userEmail,
                 otp: rawOtp,
@@ -159,7 +161,7 @@ export default function ForgotPassword() {
                                     label="Email Address"
                                     type="email"
                                     placeholder="name@domain.com"
-                                    className="!bg-black/60/60 !text-white !border-white/10 focus:!bg-neutral-900 focus:!border-blue-500/50 text-base rounded-xl px-4 py-3"
+                                    className={fixedInputClass}
                                     {...registerEmail("email", {
                                         required: "Email address identification is required.",
                                         pattern: {
@@ -201,7 +203,7 @@ export default function ForgotPassword() {
                                             ref={(el) => (otpRefs.current[index] = el)}
                                             onChange={(e) => handleOtpChange(e, index)}
                                             onKeyDown={(e) => handleOtpKeyDown(e, index)}
-                                            className="w-12 h-14 bg-black/60/60 text-white border border-white/10 focus:border-blue-500 text-center text-xl font-bold font-mono rounded-xl focus:outline-none transition-all"
+                                            className={fixedOtpClass}
                                         />
                                     ))}
                                 </div>
@@ -213,7 +215,7 @@ export default function ForgotPassword() {
                                     <Input
                                         label="New Password"
                                         type="password"
-                                        className="!bg-black/60/60 !text-white !border-white/10 focus:!bg-neutral-900 focus:!border-blue-500/50 text-base rounded-xl px-4 py-3"
+                                        className={fixedInputClass}
                                         {...registerReset("newPassword", {
                                             required: "Please configure a password key signature.",
                                             minLength: { value: 8, message: "Must be at least 8 characters long." },
@@ -231,7 +233,7 @@ export default function ForgotPassword() {
                                     <Input
                                         label="Confirm New Password"
                                         type="password"
-                                        className="!bg-black/60/60 !text-white !border-white/10 focus:!bg-neutral-900 focus:!border-blue-500/50 text-base rounded-xl px-4 py-3"
+                                        className={fixedInputClass}
                                         {...registerReset("confirmPassword", {
                                             required: "Please re-type validation parameters.",
                                             validate: (value) => value === getResetValues("newPassword") || "Passwords don't match."

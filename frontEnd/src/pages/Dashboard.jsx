@@ -1,12 +1,12 @@
 import { useEffect, useState, useRef } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import authService from "../services/auth";
 import { Container, DeleteConfirmationModal, Button, Input } from "../components/index";
 
 // Imported your exact action creator from your authSlice file
-import { logout } from "../store/authSlice"; // <-- Adjust this path to match your folder structure
+import { logout } from "../store/authSlice";
 
 export default function Dashboard() {
     // Core user properties sourced from global Redux context
@@ -53,6 +53,7 @@ export default function Dashboard() {
         reset: resetPassword,
         setValue: setPasswordFormValue,
         getValues: getPasswordValues,
+        control: passwordControl, // Extracted for useWatch to satisfy React Compiler
         formState: { errors: passwordErrors }
     } = useForm();
 
@@ -61,7 +62,21 @@ export default function Dashboard() {
         handleSubmit: handleDeleteSubmit,
         reset: resetDelete,
         setValue: setDeleteFormValue,
+        control: deleteControl, // Extracted for useWatch to satisfy React Compiler
     } = useForm();
+
+    // Replaced watch() with useWatch() hooks to make code compatible with React Compiler
+    const watchedPasswordOtp = useWatch({
+        control: passwordControl,
+        name: "passwordOtp",
+        defaultValue: {}
+    });
+
+    const watchedDeleteOtp = useWatch({
+        control: deleteControl,
+        name: "deleteOtp",
+        defaultValue: {}
+    });
 
     // Pull database profile configuration values on initialization
     useEffect(() => {
@@ -124,9 +139,6 @@ export default function Dashboard() {
 
         pastedData.split("").forEach((char, index) => {
             setValue(`${formKey}.${index}`, char);
-            if (refs.current[index]) {
-                refs.current[index].value = char;
-            }
         });
 
         const focusIndex = pastedData.length < 6 ? pastedData.length : 5;
@@ -168,7 +180,8 @@ export default function Dashboard() {
         if (userData) {
             resetProfile({
                 bio: userData.bio || "",
-                socialLinks: userData.socialLinks || { github: "", linkedin: "" }
+                socialLinks: userData.socialLinks || { github: "", linkedin: "" },
+                profilePhotoFile: null
             });
         }
         setPhotoPreview(null);
@@ -262,6 +275,7 @@ export default function Dashboard() {
             const response = await authService.deleteAccount({ otp: rawOtp });
             if (response?.success) {
                 setIsDeleteModalOpen(false);
+                resetDelete();
 
                 // 1. Clean global Redux memory safely using your slice action
                 dispatch(logout());
@@ -537,6 +551,7 @@ export default function Dashboard() {
                                                         maxLength={1}
                                                         pattern="\d*"
                                                         inputMode="numeric"
+                                                        value={watchedPasswordOtp[index] || ""}
                                                         {...registerPassword(`passwordOtp.${index}`, { required: true })}
                                                         ref={(el) => (passwordOtpRefs.current[index] = el)}
                                                         onChange={(e) => handleOtpChange(e, index, passwordOtpRefs, "passwordOtp", setPasswordFormValue)}
@@ -595,7 +610,7 @@ export default function Dashboard() {
                     setDeleteMessage({ text: "", isError: false });
                     resetDelete();
                 }}
-                onConfirm={handleDeleteSubmit(onDeleteSubmit)}
+                onConfirm={() => handleDeleteSubmit(onDeleteSubmit)()}
                 title="Permanently Delete Account?"
                 message={
                     deleteOtpLoading
@@ -627,6 +642,7 @@ export default function Dashboard() {
                                     maxLength={1}
                                     pattern="\d*"
                                     inputMode="numeric"
+                                    value={watchedDeleteOtp[index] || ""}
                                     {...registerDelete(`deleteOtp.${index}`, { required: true })}
                                     ref={(el) => (deleteOtpRefs.current[index] = el)}
                                     onChange={(e) => handleOtpChange(e, index, deleteOtpRefs, "deleteOtp", setDeleteFormValue)}
