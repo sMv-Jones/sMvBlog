@@ -19,6 +19,7 @@ const generateTokenAndSetCookie = (res, userId, userName, displayName) => {
         httpOnly: true,
         secure: true,
         sameSite: 'None',
+        partitioned: true, //Mordern Cookie Format
         maxAge: 30 * 24 * 60 * 60 * 1000
     });
 };
@@ -33,6 +34,7 @@ const generateOTPCookie = (res, email) => {
         httpOnly: true,
         secure: true,
         sameSite: 'None',
+        partitioned: true,
         maxAge: 5 * 60 * 1000 + 20 * 1000
     });
 }
@@ -115,7 +117,8 @@ export const verfiyRegister = async (req, res, next) => {
         res.clearCookie("OTP", {
             httpOnly: true,
             secure: true || process.env.NODE_ENV === 'production',
-            sameSite: "none"
+            sameSite: "none",
+            partitioned: true,
         });
         res.status(201).json({
             success: true,
@@ -154,7 +157,8 @@ export const logoutUser = async (req, res) => {
     res.clearCookie("token", {
         httpOnly: true,
         secure: true || process.env.NODE_ENV === 'production',
-        sameSite: "none" // Set to "none" if cross-site, matching your setter config
+        sameSite: "none", // Set to "none" if cross-site, matching your setter config
+        partitioned: true,
     });
     res.json({ success: true, message: "Logged out successfully" });
 };
