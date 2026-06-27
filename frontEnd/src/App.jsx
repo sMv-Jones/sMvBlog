@@ -31,10 +31,12 @@ function App() {
   }, [dispatch]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <AllPostsLoading title="Initializing Application" description="Setting up your secure workspace..." />
+    return (<>
+      <Header />
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Loading title="Initializing Application" description="Setting up your secure workspace..." />
       </div>
+      <Footer /></>
     );
   }
 
@@ -54,17 +56,14 @@ function App() {
 export default App;
 
 
-function AllPostsLoading() {
+function Loading() {
   return (
     <div className="w-full py-8 px-4 sm:px-6 lg:px-10 text-white">
       <div className="max-w-7xl mx-auto mt-6 rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-12 text-center flex flex-col items-center shadow-xl">
 
-        {/* Animated Spinning Circle Container */}
         <div className="relative w-12 h-12 mb-4 flex items-center justify-center">
-          {/* Background Track Circle */}
           <div className="absolute inset-0 rounded-full border-4 border-white/5 shadow-inner"></div>
 
-          {/* Active Spinning Top Border */}
           <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-400 animate-spin"></div>
         </div>
 
