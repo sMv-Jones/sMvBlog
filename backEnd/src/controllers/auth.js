@@ -52,7 +52,15 @@ export const registerUser = async (req, res, next) => {
             res.status(400);
             throw new Error('User already exists');
         }
+        await OTP.deleteMany({ email });
         const otp = crypto.randomInt(100000, 1000000).toString();
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await OTP.create({
+            email,
+            otp,
+            data: { email, password: hashedPassword, name }
+        });
+        generateOTPCookie(res, email);
         await emailSender(
             email,
             "Verify Your Email Address",
@@ -62,18 +70,12 @@ export const registerUser = async (req, res, next) => {
                 otp
             )
         );
-        generateOTPCookie(res, email);
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await OTP.deleteMany({ email });
-        await OTP.create({
-            email,
-            otp,
-            data: { email, password: hashedPassword, name }
-        });
         res.status(201).json({
             success: true,
         });
-    } catch (error) { next(error); }
+    } catch (error) { 
+        next(error); 
+    }
 };
 
 export const verfiyRegister = async (req, res, next) => {
