@@ -28,11 +28,14 @@ function App() {
     };
 
     checkUser();
-  }, [dispatch]); // Safe, reliable, and clean dependency architecture
+  }, [dispatch]);
 
   if (loading) {
-    // Optional: Replace null with a global loader spinner component if preferred 
-    return null; 
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <AllPostsLoading title="Initializing Application" description="Setting up your secure workspace..." />
+      </div>
+    );
   }
 
   return (
@@ -49,3 +52,27 @@ function App() {
 }
 
 export default App;
+
+
+function AllPostsLoading() {
+  return (
+    <div className="w-full py-8 px-4 sm:px-6 lg:px-10 text-white">
+      <div className="max-w-7xl mx-auto mt-6 rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-12 text-center flex flex-col items-center shadow-xl">
+
+        {/* Animated Spinning Circle Container */}
+        <div className="relative w-12 h-12 mb-4 flex items-center justify-center">
+          {/* Background Track Circle */}
+          <div className="absolute inset-0 rounded-full border-4 border-white/5 shadow-inner"></div>
+
+          {/* Active Spinning Top Border */}
+          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-400 animate-spin"></div>
+        </div>
+
+        <h2 className="text-xl font-bold text-white mb-2">Loading Articles</h2>
+        <p className="text-sm text-white/50 max-w-sm animate-pulse">
+          Fetching the latest content for you...
+        </p>
+      </div>
+    </div>
+  )
+}
