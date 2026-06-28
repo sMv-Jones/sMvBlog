@@ -31,4 +31,4 @@ app.use('/api/posts', postRoutes);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`[Production Server] Active and execution stable across port: ${PORT}`));
+app.listen(PORT, () => console.log(`${process.env.NODE_ENV} Active and execution stable across port: ${PORT}`));
