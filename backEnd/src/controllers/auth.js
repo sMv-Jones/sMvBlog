@@ -87,9 +87,6 @@ export const verfiyRegister = async (req, res, next) => {
             res.status(404);
             throw new Error('OTP expired or not found');
         }
-        if (otpRecord.otp !== req.body.otp) {
-            throw new Error('Invalid OTP');
-        }
         if (String(userOTP) !== String(otpRecord.otp)) {
             res.status(401);
             throw new Error('Invalid OTP');
