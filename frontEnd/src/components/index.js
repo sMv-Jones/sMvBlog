@@ -6,7 +6,7 @@ import DeleteConfirmationModal from "./auth/DeleteConfirmationModal"
 // common
 import Button from "./common/Button"
 import Input from "./common/Input"
-import Logo from "./common/logo"
+import Logo from "./common/Logo"
 import Select from "./common/Select"
 import Container from "./common/Container"
 
