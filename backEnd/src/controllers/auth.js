@@ -40,7 +40,7 @@ const generateOTPCookie = (res, email) => {
 }
 
 export const getRandomProfilePhoto = () => {
-    const randomNumber = Math.floor(Math.random() * 9);
+    const randomNumber = Math.floor(Math.random() * 5);
     return `profilePhoto_${String(randomNumber).padStart(2, "0")}.png`;
 };
 

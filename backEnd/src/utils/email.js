@@ -1,24 +1,45 @@
 import "dotenv/config";
-import nodemailer from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.MAIL,
-        pass: process.env.MAIL_PASS,
-    },
-});
+// Added fromName as an optional parameter (defaults to "sMv|Blog")
+export const Email = async (email, subject, message, fromName = "sMv|Blog") => {
+    const googleScriptUrl = process.env.GAS_WEB_APP_URL;
+    const authToken = process.env.GAS_AUTH_TOKEN;
 
-export const Email = async (email, subject, message) => {
+    if (!googleScriptUrl || !authToken) {
+        throw new Error("Missing GAS_WEB_APP_URL or GAS_AUTH_TOKEN in environment variables.");
+    }
 
-    const mailOptions = {
-        from: `sMv_Blog ${process.env.MAIL}`,
-        to: email,
-        subject: subject,
-        html: message,
-    };
+    try {
+        const response = await fetch(googleScriptUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                token: authToken,
+                to: email,
+                subject: subject,
+                body: message,
+                fromName: fromName // <-- Pass the display name to Google
+            }),
+        });
 
-    await transporter.sendMail(mailOptions);
+        const responseText = await response.text();
+
+        if (responseText.trim().startsWith("<!DOCTYPE")) {
+            throw new Error("Google Apps Script returned HTML. Check permissions.");
+        }
+
+        const result = JSON.parse(responseText);
+
+        if (result.status !== "success") {
+            throw new Error(`Google Apps Script Error: ${result.message}`);
+        }
+        
+    } catch (error) {
+        console.error("Failed to send email via Google Apps Script:", error);
+        throw error;
+    }
 };
 
 export default Email;
