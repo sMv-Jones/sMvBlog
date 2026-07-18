@@ -1,6 +1,5 @@
 import "dotenv/config";
 
-// Added fromName as an optional parameter (defaults to "sMv|Blog")
 export const Email = async (email, subject, message, fromName = "sMv|Blog") => {
     const googleScriptUrl = process.env.GAS_WEB_APP_URL;
     const authToken = process.env.GAS_AUTH_TOKEN;
@@ -20,7 +19,7 @@ export const Email = async (email, subject, message, fromName = "sMv|Blog") => {
                 to: email,
                 subject: subject,
                 body: message,
-                fromName: fromName // <-- Pass the display name to Google
+                fromName: fromName 
             }),
         });
 
