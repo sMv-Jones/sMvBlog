@@ -10,7 +10,6 @@ function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    // Keeping logic isolated inside the effect avoids dependency array bloat
     const checkUser = async () => {
       try {
         const userData = await authService.getCurrentUser();
