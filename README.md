@@ -4,7 +4,7 @@ Welcome to the **sMv | Blog** repository. This is a full-stack blogging applicat
 
 ---
 
-## 🚀 Tech Stack
+## Tech Stack
 
 ### Frontend
 
@@ -31,7 +31,7 @@ Welcome to the **sMv | Blog** repository. This is a full-stack blogging applicat
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```text
 sMv-Blog/
@@ -75,11 +75,11 @@ npm run dev
 npm run start
 ```
 
-> 💡 **Tip:** Open two terminal windows or tabs—one for the frontend and one for the backend—and run `npm run dev` in both directories for local development.
+> **Tip:** Open two terminal windows or tabs—one for the frontend and one for the backend—and run `npm run dev` in both directories for local development.
 
 ---
 
-# 📧 Google Apps Script Email Setup
+# Google Apps Script Email Setup
 
 Instead of a heavy third-party dependency like Nodemailer, this project routes email notifications through a custom, authenticated Google Apps Script Web App.
 
@@ -155,7 +155,7 @@ function doPost(e) {
 | Execute As     | Me ([your-email@gmail.com](mailto:your-email@gmail.com)) |
 | Who Has Access | Anyone                                                   |
 
-> ⚠️ This allows your backend to access the Google Apps Script endpoint. Security is maintained through the `AUTH_TOKEN`.
+> This allows your backend to access the Google Apps Script endpoint. Security is maintained through the `AUTH_TOKEN`.
 
 5. Click **Deploy** and complete the authorization process.
 6. Copy the generated Web App URL. It should look like:
@@ -178,13 +178,13 @@ Changes will not go live until a new deployment version is published.
 
 ---
 
-# 🔑 Environment Variables
+# Environment Variables
 
 Proper configuration of environment variables is required before running the application.
 
 ---
 
-## 📝 Backend Configuration
+## Backend Configuration
 
 Create a `.env` file inside:
 
@@ -213,11 +213,11 @@ GAS_AUTH_TOKEN=YOUR_SUPER_SECRET_GENERATED_TOKEN_HERE
 JWT_SECRET=your_super_secret_jwt_key
 ```
 
-> ⚠️ Do not wrap values in quotation marks inside `.env` files.
+> Do not wrap values in quotation marks inside `.env` files.
 
 ---
 
-## 📝 Frontend Configuration
+## Frontend Configuration
 
 Create a `.env` file inside:
 
@@ -235,7 +235,7 @@ VITE_TINY_MCE_API_KEY=your_tinymce_api_key
 
 ---
 
-# ✍️ TinyMCE Setup
+# TinyMCE Setup
 
 This project uses TinyMCE as the rich-text editor for creating and editing blog content.
 
@@ -248,20 +248,20 @@ This project uses TinyMCE as the rich-text editor for creating and editing blog 
 
 ---
 
-# ✨ Features
+# Features
 
-* 📝 Create, edit, and publish blog posts
-* ✍️ Rich-text content editing with TinyMCE Editor
-* 🖼️ Upload and manage blog images through Azure Blob Storage
-* 📧 Automated email and OTP notifications using an authenticated Google Apps Script microservice
-* ⚡ Full MERN Stack architecture
-* 🔒 Secure environment-based configuration
-* 🌐 RESTful API backend
-* 📱 Responsive user interface
+* Create, edit, and publish blog posts
+* Rich-text content editing with TinyMCE Editor
+* Upload and manage blog images through Azure Blob Storage
+* Automated email and OTP notifications using an authenticated Google Apps Script microservice
+* Full MERN Stack architecture
+* Secure environment-based configuration
+* RESTful API backend
+* Responsive user interface
 
 ---
 
-# 🛡️ Troubleshooting & Tips
+# Troubleshooting & Tips
 
 ## TinyMCE Editor Not Loading
 
